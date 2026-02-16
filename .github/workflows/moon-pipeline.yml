@@ -22,23 +22,23 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gdal-bin libgdal-dev
+          sudo apt-get install -y gdal-bin libgdal-dev python3-gdal
           pip install numpy requests quantized-mesh-encoder
-          npm install -g typescript
 
       - name: Download Datasets
         run: |
-          curl -L -o Lunar_LRO_LOLA_Global_LDEM_128ppd.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif
-          curl -L -o Lunar_LRO_WAC_Mosaic_Global_100m.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_WAC_Mosaic_Global_100m.tif
+          mkdir -p moon/data
+          curl -L -o moon/data/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif
+          curl -L -o moon/data/Lunar_LRO_WAC_Mosaic_Global_100m.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_WAC_Mosaic_Global_100m.tif
 
       - name: Process Landmarks
-        run: python moon/scripts/process_landmarks.py
+        run: python3 moon/scripts/process_landmarks.py
 
       - name: Tile Imagery (WAC)
-        run: python moon/scripts/generate_imagery.py
+        run: python3 moon/scripts/generate_imagery.py
 
       - name: Generate Terrain Tiles
-        run: python moon/scripts/generate_terrain.py
+        run: python3 moon/scripts/generate_terrain.py
         # Note: generate_terrain.py currently creates the layer.json.
         # For a full mesh production, it would loop through tiles.
 

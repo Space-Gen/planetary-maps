@@ -6,9 +6,11 @@ from osgeo import gdal
 import quantized_mesh_encoder as qme
 
 def generate_terrain():
-    input_dem = "Lunar_LRO_LOLA_Global_LDEM_128ppd.tif"
+    input_dem = "moon/data/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif"
     output_base = "moon/public/tiles/terrain"
     os.makedirs(output_base, exist_ok=True)
+    
+    max_zoom = 0 # Define max_zoom
     
     ds = gdal.Open(input_dem)
     if not ds:
@@ -18,6 +20,9 @@ def generate_terrain():
     print("Generating Level 0 terrain tiles...")
     # Level 0 has 2 tiles (2x1 grid)
     for x in range(2):
+        tile_dir = os.path.join(output_base, f"0/{x}")
+        os.makedirs(tile_dir, exist_ok=True)
+        
         # Sample the DEM for this tile (Geographic projection assumed)
         # This is a high-level abstraction for the demo
         # In production, we'd use gdal.Translate with srcWin

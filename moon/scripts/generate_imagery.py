@@ -2,7 +2,7 @@ import os
 import subprocess
 
 def generate_imagery():
-    input_wac = "Lunar_LRO_WAC_Mosaic_Global_100m.tif"
+    input_wac = "moon/data/Lunar_LRO_WAC_Mosaic_Global_100m.tif"
     output_dir = "moon/public/tiles/imagery"
     
     if not os.path.exists(input_wac):

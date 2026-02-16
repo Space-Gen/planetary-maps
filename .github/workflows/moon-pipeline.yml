@@ -31,7 +31,7 @@ jobs:
           echo "Downloading DEM..."
           curl -fL --retry 5 --retry-delay 5 -o moon/data/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LOLA_Global_LDEM_118m_Mar2014.tif
           echo "Downloading WAC Mosaic..."
-          curl -fL --retry 5 --retry-delay 5 -o moon/data/Lunar_LRO_WAC_Mosaic_Global_100m.tif https://astrocloud.wr.usgs.gov/public/Moon/LROC_WAC/Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif
+          curl -fL --retry 5 --retry-delay 5 -o moon/data/Lunar_LRO_WAC_Mosaic_Global_100m.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif
           echo "Downloading Landmarks KMZ..."
           curl -fL --retry 5 --retry-delay 5 -o moon/data/moon_features.kmz https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MOON_nomenclature_center_pts.kmz
           ls -lh moon/data/

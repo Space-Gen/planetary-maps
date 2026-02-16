@@ -1,0 +1,59 @@
+name: Moon Map Pipeline
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin libgdal-dev
+          pip install numpy requests quantized-mesh-encoder
+          npm install -g typescript
+
+      - name: Download Datasets
+        run: |
+          curl -L -o Lunar_LRO_LOLA_Global_LDEM_128ppd.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif
+          curl -L -o Lunar_LRO_WAC_Mosaic_Global_100m.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_WAC_Mosaic_Global_100m.tif
+
+      - name: Process Landmarks
+        run: python moon/scripts/process_landmarks.py
+
+      - name: Tile Imagery (WAC)
+        run: python moon/scripts/generate_imagery.py
+
+      - name: Generate Terrain Tiles
+        run: python moon/scripts/generate_terrain.py
+        # Note: generate_terrain.py currently creates the layer.json.
+        # For a full mesh production, it would loop through tiles.
+
+      - name: Build TypeScript App
+        run: |
+          tsc moon/src/app.ts --outFile moon/public/app.js --target es6 --lib dom,es6
+
+      - name: Prepare for Deployment
+        run: |
+          mkdir -p dist/moon
+          cp -r moon/public/* dist/moon/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          keep_files: true

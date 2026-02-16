@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planetary Maps - Moon 3D Viewer</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="ui.css">
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+    <div id="ui-overlay">
+        <div id="sidebar">
+            <h1>Lunar Explorer</h1>
+            <div class="search-box">
+                <input type="text" id="landmark-search" placeholder="Search craters, maria...">
+            </div>
+            <div class="categories">
+                <button onclick="filterLandmarks('all')">All</button>
+                <button onclick="filterLandmarks('Crater')">Craters</button>
+                <button onclick="filterLandmarks('Mare')">Maria</button>
+                <button onclick="filterLandmarks('Mons')">Mountains</button>
+                <button onclick="filterLandmarks('Landing site')">Landing Sites</button>
+            </div>
+            <div id="landmark-list"></div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

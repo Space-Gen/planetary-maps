@@ -2,19 +2,20 @@ declare var Cesium: any;
 
 // Moon Ellipsoid (1737.4 km)
 const moonEllipsoid = new Cesium.Ellipsoid(1737400, 1737400, 1737400);
-Cesium.Ellipsoid.MOON = moonEllipsoid;
+
+const imageryProvider = new Cesium.UrlTemplateImageryProvider({
+    url: './tiles/imagery/{z}/{x}/{y}.png',
+    maximumLevel: 5,
+    credit: 'NASA/LRO/WAC/USGS',
+    tilingScheme: new Cesium.GeographicTilingScheme({ ellipsoid: moonEllipsoid })
+});
 
 const viewer = new Cesium.Viewer('cesiumContainer', {
+    baseLayer: new Cesium.ImageryLayer(imageryProvider),
     terrainProvider: new Cesium.CesiumTerrainProvider({
         url: './tiles/terrain',
-        requestVertexNormals: false, // Disabled as our generator doesn't produce them yet
+        requestVertexNormals: false,
         ellipsoid: moonEllipsoid
-    }),
-    imageryProvider: new Cesium.UrlTemplateImageryProvider({
-        url: './tiles/imagery/{z}/{x}/{y}.png',
-        maximumLevel: 5,
-        credit: 'NASA/LRO/WAC/USGS',
-        tilingScheme: new Cesium.GeographicTilingScheme({ ellipsoid: moonEllipsoid })
     }),
     baseLayerPicker: false,
     geocoder: false,
@@ -22,22 +23,23 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     infoBox: true,
     sceneModePicker: false,
     selectionIndicator: true,
-    timeline: true,
+    timeline: false,
+    animation: false,
     navigationHelpButton: false,
     shadows: true,
-    terrainShadows: Cesium.ShadowMode.ENABLED,
-    skyBox: false,
-    baseLayer: false
+    skyBox: false
 });
-
-// Suppress Ion warning for this prototype
-Cesium.Ion.defaultAccessToken = ''; 
 
 // Moon configuration
 viewer.scene.globe.enableLighting = true;
 viewer.scene.globe.ellipsoid = moonEllipsoid;
-viewer.scene.moon = undefined; // Hide the default moon since we are ON it
+viewer.scene.moon = undefined; 
 viewer.clock.multiplier = 3600; 
+
+// Initial View
+viewer.camera.setView({
+    destination: Cesium.Cartesian3.fromDegrees(0, 0, 5000000)
+});
 
 let allLandmarks: any[] = [];
 const dataSource = new Cesium.CustomDataSource('landmarks');
@@ -60,23 +62,22 @@ function renderLandmarks(landmarks: any[]) {
         if (lm.importance >= 2) {
             dataSource.entities.add({
                 position: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat),
-                billboard: {
-                    image: 'https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Widgets/Images/NavigationHelpButton.svg', // Placeholder
-                    width: 24,
-                    height: 24,
-                    color: Cesium.Color.fromCssColorString('#ffffff').withAlpha(0.8),
-                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                    disableDepthTestDistance: Number.POSITIVE_INFINITY
+                point: {
+                    pixelSize: lm.importance * 3,
+                    color: Cesium.Color.fromCssColorString('#ffffff').withAlpha(0.6),
+                    outlineColor: Cesium.Color.BLACK,
+                    outlineWidth: 1,
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 2000000)
                 },
                 label: {
                     text: lm.name,
-                    font: '14px sans-serif',
+                    font: '12px sans-serif',
                     fillColor: Cesium.Color.WHITE,
                     outlineColor: Cesium.Color.BLACK,
                     outlineWidth: 2,
                     style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                    verticalOrigin: Cesium.VerticalOrigin.TOP,
-                    pixelOffset: new Cesium.Cartesian2(0, 5),
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    pixelOffset: new Cesium.Cartesian2(0, -10),
                     distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 1000000)
                 },
                 name: lm.name,
@@ -94,27 +95,31 @@ function populateSidebar(landmarks: any[]) {
     landmarks
         .filter(lm => lm.importance >= 3)
         .sort((a, b) => b.importance - a.importance)
-        .slice(0, 50)
+        .slice(0, 100)
         .forEach(lm => {
             const item = document.createElement('div');
             item.className = 'landmark-item';
             item.innerHTML = `
                 <div class="name">${lm.name}</div>
-                <div class="type">${lm.type} - ${lm.diameter_km}km</div>
+                <div class="type">${lm.type}</div>
             `;
-            item.onclick = () => flyToLandmark(lm);
+            item.onclick = () => {
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat, 200000),
+                    orientation: { pitch: Cesium.Math.toRadians(-45) }
+                });
+                if (window.innerWidth < 480) {
+                    document.getElementById('sidebar')?.classList.add('hidden');
+                }
+            };
             list.appendChild(item);
         });
 }
 
-function flyToLandmark(lm: any) {
-    viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat, 100000),
-        orientation: {
-            pitch: Cesium.Math.toRadians(-45)
-        }
-    });
-}
+// UI Controls
+document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+    document.getElementById('sidebar')?.classList.toggle('hidden');
+});
 
 (window as any).filterLandmarks = (type: string) => {
     const filtered = type === 'all' 

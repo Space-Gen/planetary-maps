@@ -16,8 +16,11 @@ def generate_imagery():
         return
 
     print("Starting imagery tiling (Zoom 0-5)...")
+    # Set environment variables for the subprocess to handle celestial bodies
+    env = os.environ.copy()
+    env["PROJ_IGNORE_CELESTIAL_BODY"] = "YES"
+    
     # Using gdal2tiles via subprocess for reliability and performance
-    # --xyz for Cesium compatibility, --zoom=0-5 for GH Actions performance
     try:
         subprocess.run([
             "gdal2tiles.py",
@@ -27,7 +30,7 @@ def generate_imagery():
             "--webviewer=none",
             input_wac,
             output_dir
-        ], check=True)
+        ], check=True, env=env)
         print(f"Imagery tiles generated in {output_dir}")
     except subprocess.CalledProcessError as e:
         print(f"Error during imagery tiling: {e}")

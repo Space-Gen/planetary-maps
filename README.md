@@ -6,7 +6,7 @@ This isn't just a static viewer—it's a living pipeline. Every 12 hours, a GitH
 
 ## 🚀 Live Explorer
 Experience the Moon in your browser:
-**[https://Space-Gen.github.io/planetary-maps/moon/](https://Space-Gen.github.io/planetary-maps/moon/)**
+**[https://space-gen.github.io/planetary-maps/moon/index.html](https://space-gen.github.io/planetary-maps/moon/index.html)**
 
 ---
 

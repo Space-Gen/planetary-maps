@@ -33,7 +33,16 @@ Since the data processing is heavy, it is designed to run entirely in GitHub Act
 2.  Enable GitHub Pages on the `gh-pages` branch.
 3.  Wait for the first workflow run to complete.
 
-The viewer will be available at `https://<your-username>.github.io/planetary-maps/moon/`.
+## Deployment
+
+The viewer is automatically built and pushed to the `gh-pages` branch. To make it live:
+
+1.  Go to **Settings > Pages** in this repository.
+2.  Under **Build and deployment > Branch**, select `gh-pages` and `/(root)`.
+3.  Click **Save**.
+
+Once deployed, the viewer will be available at:
+**[https://Space-Gen.github.io/planetary-maps/moon/](https://Space-Gen.github.io/planetary-maps/moon/)**
 
 ## Data Credits
 - NASA / LRO / LOLA / WAC

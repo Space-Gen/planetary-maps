@@ -1,14 +1,20 @@
 declare var Cesium: any;
 
+// Moon Ellipsoid (1737.4 km)
+const moonEllipsoid = new Cesium.Ellipsoid(1737400, 1737400, 1737400);
+Cesium.Ellipsoid.MOON = moonEllipsoid;
+
 const viewer = new Cesium.Viewer('cesiumContainer', {
     terrainProvider: new Cesium.CesiumTerrainProvider({
-        url: 'tiles/terrain',
-        requestVertexNormals: true
+        url: './tiles/terrain',
+        requestVertexNormals: false, // Disabled as our generator doesn't produce them yet
+        ellipsoid: moonEllipsoid
     }),
     imageryProvider: new Cesium.UrlTemplateImageryProvider({
-        url: 'tiles/imagery/{z}/{x}/{y}.png',
-        maximumLevel: 6,
-        credit: 'NASA/LRO/WAC/USGS'
+        url: './tiles/imagery/{z}/{x}/{y}.png',
+        maximumLevel: 5,
+        credit: 'NASA/LRO/WAC/USGS',
+        tilingScheme: new Cesium.GeographicTilingScheme({ ellipsoid: moonEllipsoid })
     }),
     baseLayerPicker: false,
     geocoder: false,
@@ -19,12 +25,19 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     timeline: true,
     navigationHelpButton: false,
     shadows: true,
-    terrainShadows: Cesium.ShadowMode.ENABLED
+    terrainShadows: Cesium.ShadowMode.ENABLED,
+    skyBox: false,
+    baseLayer: false
 });
+
+// Suppress Ion warning for this prototype
+Cesium.Ion.defaultAccessToken = ''; 
 
 // Moon configuration
 viewer.scene.globe.enableLighting = true;
-viewer.clock.multiplier = 3600; // Accelerated time for shadows
+viewer.scene.globe.ellipsoid = moonEllipsoid;
+viewer.scene.moon = undefined; // Hide the default moon since we are ON it
+viewer.clock.multiplier = 3600; 
 
 let allLandmarks: any[] = [];
 const dataSource = new Cesium.CustomDataSource('landmarks');
@@ -32,7 +45,7 @@ viewer.dataSources.add(dataSource);
 
 async function loadLandmarks() {
     try {
-        const response = await fetch('data/landmarks.json');
+        const response = await fetch('./data/landmarks.json');
         allLandmarks = await response.json();
         renderLandmarks(allLandmarks);
         populateSidebar(allLandmarks);

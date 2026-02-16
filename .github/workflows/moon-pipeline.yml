@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  PROJ_IGNORE_CELESTIAL_BODY: YES
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-24.04-arm
@@ -14,16 +17,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gdal-bin libgdal-dev python3-gdal
-          pip install numpy requests quantized-mesh-encoder
+          sudo apt-get install -y gdal-bin libgdal-dev python3-gdal python3-numpy python3-requests
+          pip install quantized-mesh-encoder --break-system-packages || pip install quantized-mesh-encoder
 
       - name: Download Datasets
         run: |
@@ -44,19 +42,30 @@ jobs:
           echo "Datasets verified successfully."
 
       - name: Process Landmarks
-        run: python3 moon/scripts/process_landmarks.py
+        run: /usr/bin/python3 moon/scripts/process_landmarks.py
 
       - name: Tile Imagery (WAC)
-        run: python3 moon/scripts/generate_imagery.py
+        run: /usr/bin/python3 moon/scripts/generate_imagery.py
 
       - name: Generate Terrain Tiles
-        run: python3 moon/scripts/generate_terrain.py
-        # Note: generate_terrain.py currently creates the layer.json.
-        # For a full mesh production, it would loop through tiles.
+        run: /usr/bin/python3 moon/scripts/generate_terrain.py
 
       - name: Build TypeScript App
         run: |
+          npm install -g typescript
           tsc moon/src/app.ts --outFile moon/public/app.js --target es6 --lib dom,es6
+
+      - name: Prepare for Deployment
+        run: |
+          mkdir -p dist/moon
+          cp -r moon/public/* dist/moon/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          keep_files: true
 
       - name: Prepare for Deployment
         run: |

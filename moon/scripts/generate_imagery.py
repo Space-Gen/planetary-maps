@@ -6,10 +6,16 @@ def generate_imagery():
     output_dir = "moon/public/tiles/imagery"
     
     if not os.path.exists(input_wac):
-        print(f"Input file {input_wac} not found.")
+        print(f"ERROR: Input file {input_wac} not found.")
         return
 
-    print("Starting imagery tiling...")
+    size = os.path.getsize(input_wac)
+    print(f"Input file size: {size / (1024*1024):.2f} MB")
+    if size < 1000: # Clearly too small for a global mosaic
+        print("ERROR: Input file is too small, likely corrupted or failed download.")
+        return
+
+    print("Starting imagery tiling (Zoom 0-5)...")
     # Using gdal2tiles via subprocess for reliability and performance
     # --xyz for Cesium compatibility, --zoom=0-5 for GH Actions performance
     try:

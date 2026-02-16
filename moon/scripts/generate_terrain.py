@@ -12,6 +12,16 @@ def generate_terrain():
     
     max_zoom = 0 # Define max_zoom
     
+    if not os.path.exists(input_dem):
+        print(f"ERROR: Input DEM {input_dem} not found.")
+        return
+        
+    size = os.path.getsize(input_dem)
+    print(f"Input DEM size: {size / (1024*1024):.2f} MB")
+    if size < 1000:
+        print("ERROR: Input DEM is too small.")
+        return
+
     ds = gdal.Open(input_dem)
     if not ds:
         print("Could not open DEM")

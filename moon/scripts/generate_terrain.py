@@ -5,6 +5,8 @@ import numpy as np
 from osgeo import gdal
 import quantized_mesh_encoder as qme
 
+gdal.UseExceptions()
+
 def generate_terrain():
     input_dem = "moon/data/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif"
     output_base = "moon/public/tiles/terrain"
@@ -28,23 +30,52 @@ def generate_terrain():
         return
 
     print("Generating Level 0 terrain tiles...")
+    
+    # Standard Cesium terrain tile is a 33x33 grid
+    grid_size = 33
+    
+    # Generate indices for a grid
+    indices = []
+    for j in range(grid_size - 1):
+        for i in range(grid_size - 1):
+            # Triangle 1
+            indices.append(j * grid_size + i)
+            indices.append((j + 1) * grid_size + i)
+            indices.append(j * grid_size + i + 1)
+            # Triangle 2
+            indices.append(j * grid_size + i + 1)
+            indices.append((j + 1) * grid_size + i)
+            indices.append((j + 1) * grid_size + i + 1)
+    
+    indices = np.array(indices, dtype=np.uint16)
+
     # Level 0 has 2 tiles (2x1 grid)
     for x in range(2):
         tile_dir = os.path.join(output_base, f"0/{x}")
         os.makedirs(tile_dir, exist_ok=True)
         
-        # Sample the DEM for this tile (Geographic projection assumed)
-        # This is a high-level abstraction for the demo
-        # In production, we'd use gdal.Translate with srcWin
+        # Positions: (x, y, z) where x/y are normalized [0, 32767]
+        # and z is height in meters
+        # For Level 0 tiles, we map them to the full hemisphere
+        # But for the encoder, 'positions' are usually actual lon/lat or relative
+        # Let's use the simplest (X, Y, Z) expected by qme
         
-        # Create a dummy 33x33 heightmap for the tile
-        data = np.zeros((33, 33), dtype=np.int16) 
+        lons = np.linspace(0, 1, grid_size)
+        lats = np.linspace(0, 1, grid_size)
+        lon_grid, lat_grid = np.meshgrid(lons, lats)
+        
+        # Flatten and add dummy height (0)
+        # qme.encode expects (N, 3) array
+        positions = np.stack([
+            lon_grid.flatten(),
+            lat_grid.flatten(),
+            np.zeros(grid_size * grid_size)
+        ], axis=1).astype(np.float32)
         
         # Encode to quantized mesh
-        with open(os.path.join(output_base, f"0/{x}/0.terrain"), 'wb') as f:
-            qme.encode(f, data)
-
-    # ... layer.json logic remains ...
+        tile_path = os.path.join(tile_dir, "0.terrain")
+        with open(tile_path, 'wb') as f:
+            qme.encode(f, positions, indices)
 
     # Create layer.json (Essential for Cesium)
     layer_json = {

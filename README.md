@@ -1,49 +1,36 @@
-# Planetary Maps - Moon 3D
+# 🌕 Planetary Maps: Moon 3D
 
-This repository contains a fully automated pipeline for building and deploying a Cesium.js-based 3D Moon viewer.
+Welcome to the **Planetary Maps** project. I am **Soumyadip Karforma (@soumyadipkarforma)**, and I've built this repository to provide a fully automated, high-precision 3D visualization of the Moon using the latest NASA and USGS datasets.
 
-## Structure
+This isn't just a static viewer—it's a living pipeline. Every 12 hours, a GitHub Actions workflow fetches gigabytes of raw planetary data, processes it into optimized 3D tiles, and redeploys the latest version of the explorer.
 
-- `moon/`: All Moon-specific code.
-  - `src/`: TypeScript source files.
-  - `public/`: Static assets, HTML, and processed tiles.
-  - `scripts/`: Python and shell scripts for data processing.
-- `.github/workflows/`: GitHub Actions workflow for the 12-hour automated pipeline.
-
-## Automation Pipeline
-
-The GitHub Actions workflow (`moon-pipeline.yml`) performs the following every 12 hours:
-1.  **Fetches Datasets**:
-    - LRO LOLA 128-ppd DEM (Terrain)
-    - LRO WAC 100m Mosaic (Imagery)
-    - USGS Moon Landmarks (GeoJSON)
-2.  **Processes Data**:
-    - Generates imagery tiles using GDAL.
-    - Generates quantized-mesh terrain tiles.
-    - Cleans and formats landmark data.
-3.  **Builds App**:
-    - Compiles TypeScript to JavaScript.
-4.  **Deploys**:
-    - Pushes the `moon` module to the `gh-pages` branch.
-
-## Getting Started
-
-Since the data processing is heavy, it is designed to run entirely in GitHub Actions. To see the viewer:
-1.  Push this repository to GitHub.
-2.  Enable GitHub Pages on the `gh-pages` branch.
-3.  Wait for the first workflow run to complete.
-
-## Deployment
-
-The viewer is automatically built and pushed to the `gh-pages` branch. To make it live:
-
-1.  Go to **Settings > Pages** in this repository.
-2.  Under **Build and deployment > Branch**, select `gh-pages` and `/(root)`.
-3.  Click **Save**.
-
-Once deployed, the viewer will be available at:
+## 🚀 Live Explorer
+Experience the Moon in your browser:
 **[https://Space-Gen.github.io/planetary-maps/moon/](https://Space-Gen.github.io/planetary-maps/moon/)**
 
-## Data Credits
-- NASA / LRO / LOLA / WAC
-- USGS Astrogeology Science Center
+---
+
+## 🛠 Features
+- **Global 3D Terrain**: Powered by the LRO LOLA 118m Digital Elevation Model.
+- **High-Res Imagery**: Uses the LROC WAC June 2013 Global Mosaic (100m resolution).
+- **Interactive Nomenclature**: Over 9,000 IAU-approved lunar features (craters, maria, mountains) with clickable labels and search.
+- **Real-time Lighting**: Accurate sun shadows and lunar day/night cycles using Cesium.js.
+- **Automated Pipeline**: No local processing required; the entire DEM-to-Mesh and Imagery-to-Tiles logic runs in the cloud.
+
+## 📂 Project Structure
+- `moon/src/`: The TypeScript core of the 3D viewer.
+- `moon/scripts/`: Python-based heavy lifters for GDAL-based imagery tiling and quantized-mesh generation.
+- `moon/public/`: The deployment-ready shell including our custom UI and CSS.
+- `.github/workflows/`: The "Brain" of the project that manages the 12-hour sync and build.
+
+## 📡 Data Sources
+This project relies on the incredible work of the planetary science community:
+- **USGS Astrogeology**: For hosting the LRO mosaics and DEMs.
+- **IAU Gazetteer**: For the official lunar nomenclature KMZ.
+- **CesiumJS**: The engine driving our 3D globe.
+
+## 🤝 Contributing
+I’m always looking to improve the resolution or add new planetary bodies (Mars is next!). If you find a bug or have a suggestion, feel free to open an issue or reach out to me.
+
+---
+*Maintained with ❤️ by [Soumyadip Karforma](https://github.com/soumyadipkarforma)*

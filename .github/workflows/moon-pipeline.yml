@@ -31,7 +31,7 @@ jobs:
           echo "Downloading DEM..."
           curl -fL --retry 5 --retry-delay 5 -o moon/data/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif
           echo "Downloading WAC Mosaic..."
-          curl -fL --retry 5 --retry-delay 5 -o moon/data/Lunar_LRO_WAC_Mosaic_Global_100m.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_WAC_Mosaic_Global_100m.tif
+          curl -fL --retry 5 --retry-delay 5 -o moon/data/Lunar_LRO_WAC_Mosaic_Global_100m.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif
           ls -lh moon/data/
 
       - name: Verify Datasets

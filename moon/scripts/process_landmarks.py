@@ -2,6 +2,7 @@ import json
 import requests
 
 def process_landmarks():
+    # Using the GeoJSON endpoint for the IAU nomenclature dataset
     url = "https://planetarynames.wr.usgs.gov/data/moon_features.geojson"
     print(f"Fetching landmarks from {url}...")
     

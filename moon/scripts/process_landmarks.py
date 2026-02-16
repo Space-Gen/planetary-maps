@@ -1,52 +1,75 @@
 import json
-import requests
+import os
+import zipfile
+import xml.etree.ElementTree as ET
 
 def process_landmarks():
-    # Using the official GeoJSON endpoint for the IAU nomenclature dataset
-    url = "https://planetarynames.wr.usgs.gov/data/moon_features.geojson"
-    print(f"Fetching landmarks from {url}...")
+    kmz_path = "moon/data/moon_features.kmz"
+    output_path = "moon/public/data/landmarks.json"
     
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-    except Exception as e:
-        print(f"Error fetching data: {e}")
+    if not os.path.exists(kmz_path):
+        print(f"Error: {kmz_path} not found.")
         return
 
-    features = []
-    for feature in data.get('features', []):
-        props = feature.get('properties', {})
-        coords = feature.get('geometry', {}).get('coordinates', [0, 0])
-        
-        # Clean and filter
-        name = props.get('name')
-        if not name:
-            continue
-            
-        # Importance based on diameter or type
-        diameter = props.get('diameter', 0)
-        feat_type = props.get('type', 'Unknown')
-        
-        importance = 1
-        if diameter > 100: importance = 3
-        elif diameter > 50: importance = 2
-        
-        # Specific landing sites or major features
-        if feat_type in ['Landing site', 'Mare']:
-            importance = 4
+    print(f"Processing landmarks from {kmz_path}...")
+    
+    try:
+        with zipfile.ZipFile(kmz_path, 'r') as kmz:
+            # Usually the KML file is named doc.kml or same as KMZ
+            kml_filename = next(f for f in kmz.namelist() if f.endswith('.kml'))
+            with kmz.open(kml_filename) as kml_file:
+                tree = ET.parse(kml_file)
+                root = tree.getroot()
+    except Exception as e:
+        print(f"Error reading KMZ: {e}")
+        return
 
-        clean_feature = {
+    # KML namespaces
+    ns = {'kml': 'http://www.opengis.net/kml/2.2'}
+    
+    features = []
+    # Find all Placemarks
+    for placemark in root.findall('.//kml:Placemark', ns):
+        name = placemark.find('kml:name', ns)
+        name = name.text if name is not None else "Unknown"
+        
+        point = placemark.find('.//kml:Point/kml:coordinates', ns)
+        if point is not None:
+            coords = point.text.strip().split(',')
+            lon = float(coords[0])
+            lat = float(coords[1])
+        else:
+            continue
+
+        # Extract extra info from description if available
+        desc = placemark.find('kml:description', ns)
+        feat_type = "Unknown"
+        diameter = 0
+        if desc is not None and desc.text:
+            # IAU KMZ usually has a simple HTML table or text description
+            # This is a very basic heuristic; a real parser would be more robust
+            desc_text = desc.text
+            if "Crater" in desc_text: feat_type = "Crater"
+            elif "Mare" in desc_text: feat_type = "Mare"
+            elif "Mons" in desc_text: feat_type = "Mons"
+
+        # Assign importance based on name/type
+        importance = 1
+        if feat_type == "Mare": importance = 4
+        elif feat_type == "Mons": importance = 3
+        elif any(major in name for major in ["Tycho", "Copernicus", "Kepler", "Aristarchus"]):
+            importance = 4
+            
+        features.append({
             "name": name,
             "type": feat_type,
-            "lat": coords[1],
-            "lon": coords[0],
+            "lat": lat,
+            "lon": lon,
             "diameter_km": diameter,
             "importance": importance
-        }
-        features.append(clean_feature)
+        })
 
-    output_path = "moon/public/data/landmarks.json"
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w') as f:
         json.dump(features, f, indent=2)
     print(f"Saved {len(features)} landmarks to {output_path}")

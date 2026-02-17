@@ -2,7 +2,7 @@ name: Moon Map Pipeline
 
 on:
   schedule:
-    - cron: '0 */12 * * *'
+    - cron: '0 0 * * *' # Daily at midnight
   push:
     branches: [ main ]
   workflow_dispatch:
@@ -16,68 +16,100 @@ permissions:
   id-token: write
 
 jobs:
-  build-and-deploy:
+  landmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download & Process Landmarks
+        run: |
+          mkdir -p moon/data moon/public/data
+          curl -fL --retry 3 -o moon/data/moon_features.kmz https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MOON_nomenclature_center_pts.kmz
+          python3 moon/scripts/process_landmarks.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: landmarks-data
+          path: moon/public/data/
+
+  imagery:
     runs-on: ubuntu-24.04-arm
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install Dependencies
+      - uses: actions/checkout@v4
+      - name: Install GDAL
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal
+      - name: Tile Imagery
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gdal-bin libgdal-dev python3-gdal python3-numpy python3-requests
-          pip install quantized-mesh-encoder --break-system-packages || pip install quantized-mesh-encoder
+          mkdir -p moon/data moon/public/tiles/imagery
+          curl -fL --retry 3 -o moon/data/Lunar_LRO_WAC_Mosaic_Global_100m.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif
+          /usr/bin/python3 moon/scripts/generate_imagery.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: imagery-tiles
+          path: moon/public/tiles/imagery/
 
-      - name: Download Datasets
+  terrain:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GDAL & QME
         run: |
-          mkdir -p moon/data
-          echo "Downloading DEM..."
-          curl -fL --retry 5 --retry-delay 5 -o moon/data/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LOLA_Global_LDEM_118m_Mar2014.tif
-          echo "Downloading WAC Mosaic..."
-          curl -fL --retry 5 --retry-delay 5 -o moon/data/Lunar_LRO_WAC_Mosaic_Global_100m.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif
-          echo "Downloading Landmarks KMZ..."
-          curl -fL --retry 5 --retry-delay 5 -o moon/data/moon_features.kmz https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MOON_nomenclature_center_pts.kmz
-          ls -lh moon/data/
-
-      - name: Verify Datasets
+          sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal python3-numpy
+          pip install quantized-mesh-encoder --break-system-packages
+      - name: Generate Terrain
         run: |
-          gdalinfo moon/data/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif > /dev/null
-          gdalinfo moon/data/Lunar_LRO_WAC_Mosaic_Global_100m.tif > /dev/null
-          file moon/data/moon_features.kmz | grep "Zip"
-          echo "Datasets verified successfully."
+          mkdir -p moon/data moon/public/tiles/terrain
+          curl -fL --retry 3 -o moon/data/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LOLA_Global_LDEM_118m_Mar2014.tif
+          /usr/bin/python3 moon/scripts/generate_terrain.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: terrain-tiles
+          path: moon/public/tiles/terrain/
 
-      - name: Process Landmarks
-        run: /usr/bin/python3 moon/scripts/process_landmarks.py
-
-      - name: Tile Imagery (WAC)
-        run: /usr/bin/python3 moon/scripts/generate_imagery.py
-
-      - name: Generate Terrain Tiles
-        run: /usr/bin/python3 moon/scripts/generate_terrain.py
-
-      - name: Build TypeScript App
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build JS
         run: |
           npm install -g typescript
           tsc moon/src/app.ts --outFile moon/public/app.js --target es6 --lib dom,es6
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-bundle
+          path: |
+            moon/public/app.js
+            moon/public/index.html
+            moon/public/ui.css
+            index.html
 
-      - name: Prepare for Deployment
+  deploy:
+    needs: [landmarks, imagery, terrain, app]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Prepare Workspace
+        run: mkdir -p dist/moon
+      
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Merge Artifacts
         run: |
-          mkdir -p dist/moon
-          cp -r moon/public/* dist/moon/
-          cp index.html dist/
+          # Flatten the structure from download-artifact
+          cp artifacts/app-bundle/index.html dist/
+          cp artifacts/app-bundle/moon/* dist/moon/
+          cp -r artifacts/landmarks-data/* dist/moon/data/
+          cp -r artifacts/imagery-tiles/* dist/moon/tiles/imagery/
+          cp -r artifacts/terrain-tiles/* dist/moon/tiles/terrain/
+          ls -R dist/
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
-  deploy:
-    needs: build-and-deploy
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

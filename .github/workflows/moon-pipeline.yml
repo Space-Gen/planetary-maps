@@ -64,6 +64,7 @@ jobs:
         run: |
           mkdir -p dist/moon
           cp -r moon/public/* dist/moon/
+          cp index.html dist/
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3

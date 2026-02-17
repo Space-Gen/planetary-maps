@@ -1,0 +1,11 @@
+{
+  "name": "mars-3d-viewer",
+  "version": "1.0.0",
+  "description": "Cesium-based Mars viewer",
+  "scripts": {
+    "build": "tsc src/app.ts --outFile public/app.js --target es6 --lib dom,es6"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

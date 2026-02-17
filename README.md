@@ -1,4 +1,4 @@
-# 🪐 Planetary Hub: Moon 3D Explorer
+# 🪐 Planetary Hub: Moon & Mars 3D Explorer
 
 # 💫 About Me:
 I am **Soumyadip Karforma (@soumyadipkarforma)**. I am currently working with AI agents and full-stack web development along with Linux and databases. This repository is my specialized workspace for high-fidelity planetary data engineering and 3D visualization.
@@ -12,7 +12,7 @@ I am **Soumyadip Karforma (@soumyadipkarforma)**. I am currently working with AI
 ---
 
 ## 🚀 Live Explorer
-**[Launch Moon Hub 3D](https://space-gen.github.io/planetary-maps/moon/index.html)**
+**[Launch Moon Hub 3D](https://space-gen.github.io/planetary-maps/moon/index.html)** | **[Launch Mars Hub 3D](https://space-gen.github.io/planetary-maps/mars/index.html)**
 
 ---
 
@@ -32,15 +32,16 @@ I am **Soumyadip Karforma (@soumyadipkarforma)**. I am currently working with AI
 ---
 
 ## 🛠 Project Highlights
-- **Automated Pipeline**: Every 12 hours, GitHub Actions fetches the LOLA DEM (118m) and LROC WAC Mosaic (100m) from USGS/NASA servers.
-- **Data Engineering**: Raw TIFFs are processed into Cesium quantized-mesh terrain and XYZ imagery tiles using Python, GDAL, and PROJ.
-- **Landmark Extraction**: Over 9,000 IAU lunar features are extracted from KMZ nomenclature data and parsed into a lightweight JSON database.
-- **3D Visualization**: A responsive Cesium.js application with Moon-specific ellipsoids, dynamic lighting, and integrated feature search.
+- **Automated Pipeline**: GitHub Actions fetches the LOLA DEM (118m) and LROC WAC Mosaic (100m) for the Moon, and MOLA DEM (463m) and Viking Mosaic (232m) for Mars from USGS/NASA servers.
+- **Data Engineering**: Raw TIFFs are processed into MapLibre-compatible imagery tiles and quantized-mesh terrain using Python, GDAL, and PROJ.
+- **Landmark Extraction**: Thousands of IAU planetary features are extracted from KMZ nomenclature data and parsed into lightweight JSON databases.
+- **3D Visualization**: Responsive MapLibre GL JS applications with globe projection, dynamic lighting, and integrated feature search.
 
 ## 📂 Architecture
-- `moon/src/`: Core TypeScript logic for the viewer.
-- `moon/scripts/`: Cloud-native Python tilers and parsers.
-- `moon/public/`: Deployed assets and UI shell.
+- `moon/`, `mars/`: Planet-specific workspaces.
+- `*/src/`: Core TypeScript logic for the viewers.
+- `*/scripts/`: Cloud-native Python tilers and parsers.
+- `*/public/`: Deployed assets and UI shell.
 - `.github/workflows/`: The automation engine managing data sync and deployment.
 
 ## 📡 Data Credits

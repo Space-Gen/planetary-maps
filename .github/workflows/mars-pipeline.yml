@@ -1,0 +1,124 @@
+name: Mars Map Pipeline
+
+on:
+  schedule:
+    - cron: '0 1 * * *' # Daily at 1 AM (one hour after Moon)
+  push:
+    branches: [ main ]
+    paths:
+      - 'mars/**'
+      - '.github/workflows/mars-pipeline.yml'
+  workflow_dispatch:
+
+env:
+  PROJ_IGNORE_CELESTIAL_BODY: YES
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  landmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download & Process Landmarks
+        run: |
+          mkdir -p mars/data mars/public/data
+          curl -fL --retry 3 -o mars/data/mars_features.kmz https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MARS_nomenclature_center_pts.kmz
+          python3 mars/scripts/process_landmarks.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mars-landmarks-data
+          path: mars/public/data/
+
+  imagery:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GDAL
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal
+      - name: Tile Imagery
+        run: |
+          mkdir -p mars/data mars/public/tiles/imagery
+          curl -fL --retry 3 -o mars/data/Mars_Global_Mosaic.tif https://planetarymaps.usgs.gov/mosaic/Mars_Viking_MDIM21_ClrMosaic_global_232m.tif
+          /usr/bin/python3 mars/scripts/generate_imagery.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mars-imagery-tiles
+          path: mars/public/tiles/imagery/
+
+  terrain:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GDAL & QME
+        run: |
+          sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal python3-numpy
+          pip install quantized-mesh-encoder --break-system-packages || pip install quantized-mesh-encoder
+      - name: Generate Terrain
+        run: |
+          mkdir -p mars/data mars/public/tiles/terrain
+          curl -fL --retry 3 -o mars/data/Mars_Global_DEM.tif https://planetarymaps.usgs.gov/mosaic/Mars_MGS_MOLA_DEM_mosaic_global_463m.tif
+          /usr/bin/python3 mars/scripts/generate_terrain.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mars-terrain-tiles
+          path: mars/public/tiles/terrain/
+
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build JS
+        run: |
+          npm install -g typescript
+          tsc mars/src/app.ts --outFile mars/public/app.js --target es6 --lib dom,es6
+      - name: Stage App
+        run: |
+          mkdir -p stage/mars
+          cp mars/public/index.html stage/mars/
+          cp mars/public/app.js stage/mars/
+          cp mars/public/ui.css stage/mars/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mars-app-bundle
+          path: stage/
+
+  deploy:
+    needs: [landmarks, imagery, terrain, app]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Prepare Workspace
+        run: mkdir -p dist/mars/data dist/mars/tiles/imagery dist/mars/tiles/terrain
+      
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Merge Artifacts
+        run: |
+          # Copy core app files from app-bundle
+          cp -rv artifacts/mars-app-bundle/* dist/
+          
+          # Copy data and tiles into their respective mars subdirectories
+          cp -rv artifacts/mars-landmarks-data/* dist/mars/data/
+          cp -rv artifacts/mars-imagery-tiles/* dist/mars/tiles/imagery/
+          cp -rv artifacts/mars-terrain-tiles/* dist/mars/tiles/terrain/
+          
+          # Verify the final structure
+          ls -R dist/
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

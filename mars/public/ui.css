@@ -1,0 +1,85 @@
+body, html, #map {
+    width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+    background: #000;
+}
+
+#ui-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#sidebar {
+    width: 300px;
+    background: rgba(10, 10, 10, 0.85);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    pointer-events: auto;
+    max-height: 85vh;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    transition: transform 0.3s ease;
+}
+
+#sidebar.hidden {
+    transform: translateX(-340px);
+}
+
+.toggle-btn {
+    width: 44px;
+    height: 44px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+h1 { font-size: 1.2rem; margin: 0 0 15px 0; color: #e04f39; }
+
+.search-box input {
+    width: 100%;
+    padding: 10px;
+    background: #222;
+    border: 1px solid #444;
+    color: white;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.categories button {
+    background: #333;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.7rem;
+}
+
+.landmark-item {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    margin-bottom: 5px;
+    cursor: pointer;
+}
+
+.landmark-item:hover { background: rgba(255, 255, 255, 0.1); }
+.landmark-item .name { font-weight: bold; font-size: 0.85rem; }
+.landmark-item .type { font-size: 0.7rem; color: #888; }

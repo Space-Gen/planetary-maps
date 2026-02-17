@@ -26,20 +26,20 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     timeline: false,
     animation: false,
     navigationHelpButton: false,
-    shadows: true,
-    skyBox: false
+    shadows: false, // Disabled for better initial visibility
+    skyBox: true    // Re-enabled stars for orientation
 });
 
 // Moon configuration
-viewer.scene.globe.enableLighting = true;
+viewer.scene.globe.enableLighting = false; // Disabled so the whole moon is visible initially
 viewer.scene.globe.ellipsoid = moonEllipsoid;
 viewer.scene.moon = undefined; 
-viewer.clock.multiplier = 3600; 
 
-// Initial View
-viewer.camera.setView({
-    destination: Cesium.Cartesian3.fromDegrees(0, 0, 5000000)
-});
+// Force a view of the Moon
+viewer.camera.viewBoundingSphere(
+    new Cesium.BoundingSphere(Cesium.Cartesian3.ZERO, 1737400),
+    new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-90), 5000000)
+);
 
 let allLandmarks: any[] = [];
 const dataSource = new Cesium.CustomDataSource('landmarks');

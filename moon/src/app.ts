@@ -26,11 +26,11 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     timeline: false,
     animation: false,
     navigationHelpButton: false,
-    shadows: false, // Disabled for better initial visibility
-    // Default skybox will be used automatically
+    shadows: false, 
+    skyBox: false // Explicitly disable to prevent the .update() crash
 });
 
-viewer.scene.backgroundColor = Cesium.Color.BLACK; // Fallback background
+viewer.scene.backgroundColor = Cesium.Color.BLACK; 
 
 // Moon configuration
 viewer.scene.globe.enableLighting = false; // Disabled so the whole moon is visible initially

@@ -1,0 +1,48 @@
+name: Pull Request Verifier
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'moon/**'
+      - '.github/workflows/**'
+      - 'index.html'
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Lint Scripts
+        run: |
+          # Check for syntax errors in Python scripts
+          python -m py_compile moon/scripts/*.py
+
+      - name: Verify TypeScript Build
+        run: |
+          npm install -g typescript
+          # Dry run build to check for type errors
+          tsc moon/src/app.ts --noEmit --target es6 --lib dom,es6
+
+      - name: Validate Landmarks Logic
+        run: |
+          # Verify the landmark processor runs without crashing 
+          # (Dry run without downloading full KMZ if possible, or just syntax check)
+          python3 -c "import sys; sys.path.append('moon/scripts'); import process_landmarks; print('Processor module load OK')"
+
+  verify-structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Required Files
+        run: |
+          test -f moon/src/app.ts
+          test -f moon/public/index.html
+          test -f moon/public/ui.css
+          echo "Directory structure verified."

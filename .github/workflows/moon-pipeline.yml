@@ -5,6 +5,11 @@ on:
     - cron: '0 0 * * *' # Daily at midnight
   push:
     branches: [ main ]
+    paths:
+      - 'moon/**'
+      - '.github/workflows/moon-pipeline.yml'
+      - 'index.html'
+      - 'README.md'
   workflow_dispatch:
 
 env:

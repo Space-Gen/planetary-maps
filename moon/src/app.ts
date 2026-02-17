@@ -1,45 +1,42 @@
-declare var Cesium: any;
+declare var maplibregl: any;
 
-// Use a known working imagery source to verify rendering first
-const viewer = new Cesium.Viewer('cesiumContainer', {
-    imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-        url : 'https://a.tile.openstreetmap.org/'
-    }),
-    baseLayerPicker: false,
-    geocoder: false,
-    homeButton: true,
-    infoBox: true,
-    sceneModePicker: false,
-    selectionIndicator: true,
-    timeline: false,
-    animation: false,
-    navigationHelpButton: false,
-    shadows: false,
-    skyBox: false
+const map = new maplibregl.Map({
+    container: 'map',
+    style: {
+        version: 8,
+        sources: {
+            'moon-imagery': {
+                type: 'raster',
+                tiles: [
+                    window.location.href.replace('index.html', '') + 'tiles/imagery/{z}/{x}/{y}.png'
+                ],
+                tileSize: 256,
+                attribution: 'NASA/LROC/WAC'
+            }
+        },
+        layers: [
+            {
+                id: 'moon-layer',
+                type: 'raster',
+                source: 'moon-imagery',
+                minzoom: 0,
+                maxzoom: 6
+            }
+        ]
+    },
+    center: [0, 0],
+    zoom: 1,
+    projection: 'globe' 
 });
 
-// Moon aesthetic fallback
-viewer.scene.globe.baseColor = Cesium.Color.GRAY;
-viewer.scene.backgroundColor = Cesium.Color.BLACK;
-
-// Add our custom Moon imagery as an overlay to see if it loads
-const moonImagery = new Cesium.UrlTemplateImageryProvider({
-    url: './tiles/imagery/{z}/{x}/{y}.png',
-    maximumLevel: 5,
-    credit: 'NASA/LRO/WAC/USGS',
-    // Cesium uses TMS (Y from bottom) by default for UrlTemplate, 
-    // but gdal2tiles -p geodetic produces standard XYZ. 
-    // We may need to flip Y or use a TilingScheme.
-    tilingScheme: new Cesium.GeographicTilingScheme()
+map.on('style.load', () => {
+    map.setFog({
+        color: 'rgb(0, 0, 0)',
+        range: [1, 10]
+    });
 });
-viewer.imageryLayers.addImageryProvider(moonImagery);
-
-// Force view
-viewer.camera.flyHome(0);
 
 let allLandmarks: any[] = [];
-const dataSource = new Cesium.CustomDataSource('landmarks');
-viewer.dataSources.add(dataSource);
 
 async function loadLandmarks() {
     try {
@@ -53,33 +50,47 @@ async function loadLandmarks() {
 }
 
 function renderLandmarks(landmarks: any[]) {
-    dataSource.entities.removeAll();
-    landmarks.forEach(lm => {
-        if (lm.importance >= 2) {
-            dataSource.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat),
-                point: {
-                    pixelSize: 6,
-                    color: Cesium.Color.CYAN,
-                    outlineColor: Cesium.Color.WHITE,
-                    outlineWidth: 1
-                },
-                label: {
-                    text: lm.name,
-                    font: '14px sans-serif',
-                    fillColor: Cesium.Color.WHITE,
-                    outlineColor: Cesium.Color.BLACK,
-                    outlineWidth: 2,
-                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                    pixelOffset: new Cesium.Cartesian2(0, -10),
-                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 5000000)
-                },
-                name: lm.name,
-                description: `Type: ${lm.type}`
-            });
-        }
-    });
+    const geojson = {
+        type: 'FeatureCollection',
+        features: landmarks.filter(lm => lm.importance >= 2).map(lm => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [lm.lon, lm.lat] },
+            properties: { ...lm }
+        }))
+    };
+
+    if (map.getSource('landmarks')) {
+        map.getSource('landmarks').setData(geojson);
+    } else {
+        map.addSource('landmarks', { type: 'geojson', data: geojson });
+        map.addLayer({
+            id: 'landmark-points',
+            type: 'circle',
+            source: 'landmarks',
+            paint: {
+                'circle-radius': ['*', ['get', 'importance'], 2],
+                'circle-color': '#30bced',
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#fff'
+            }
+        });
+        map.addLayer({
+            id: 'landmark-labels',
+            type: 'symbol',
+            source: 'landmarks',
+            layout: {
+                'text-field': ['get', 'name'],
+                'text-size': 12,
+                'text-offset': [0, 1.5],
+                'text-anchor': 'top'
+            },
+            paint: {
+                'text-color': '#fff',
+                'text-halo-color': '#000',
+                'text-halo-width': 1
+            }
+        });
+    }
 }
 
 function populateSidebar(landmarks: any[]) {
@@ -96,8 +107,10 @@ function populateSidebar(landmarks: any[]) {
             item.className = 'landmark-item';
             item.innerHTML = `<div class="name">${lm.name}</div><div class="type">${lm.type}</div>`;
             item.onclick = () => {
-                viewer.camera.flyTo({
-                    destination: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat, 500000)
+                map.flyTo({
+                    center: [lm.lon, lm.lat],
+                    zoom: 4,
+                    essential: true
                 });
             };
             list.appendChild(item);
@@ -114,4 +127,4 @@ document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
     populateSidebar(filtered);
 };
 
-loadLandmarks();
+map.on('load', loadLandmarks);

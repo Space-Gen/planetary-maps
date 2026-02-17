@@ -1,0 +1,69 @@
+name: Daily Fresh LRO Stacker
+
+on:
+  schedule:
+    - cron: '0 12 * * *' 
+  push:
+    branches: [ feat/daily-fresh-lro ]
+  workflow_dispatch:
+
+env:
+  PROJ_IGNORE_CELESTIAL_BODY: YES
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      strips: ${{ steps.finder.outputs.strips }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: finder
+        run: python3 moon/scripts/discover_lro.py
+
+  process-spotlights:
+    needs: discover
+    strategy:
+      matrix:
+        strip: ${{ fromJson(needs.discover.outputs.strips) }}
+      fail-fast: false
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GDAL
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin
+      - name: Tile NAC Spotlight
+        run: |
+          mkdir -p spotlight_tiles/${{ matrix.strip.id }}
+          curl -fL -o raw.tif ${{ matrix.strip.url }}
+          # Tile at VERY high resolution (Zoom 14-16) for landing site details
+          gdal2tiles.py --zoom=14-16 --processes=4 --profile=geodetic --webviewer=none raw.tif spotlight_tiles/${{ matrix.strip.id }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spotlight-${{ matrix.strip.id }}
+          path: spotlight_tiles/${{ matrix.strip.id }}
+
+  merge-and-deploy:
+    needs: process-spotlights
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all spotlights
+        uses: actions/download-artifact@v4
+        with:
+          path: spotlight_artifacts
+      - name: Merge Into Hub
+        run: |
+          mkdir -p dist/moon/tiles/spotlights
+          cp -rv spotlight_artifacts/spotlight-*/* dist/moon/tiles/spotlights/
+          cp index.html dist/
+          cp -r moon/public/* dist/moon/
+      - name: Deploy Update
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+      - uses: actions/deploy-pages@v4

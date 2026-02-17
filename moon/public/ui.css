@@ -1,6 +1,5 @@
-body, html, #cesiumContainer {
+body, html, #map {
     width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: #000;
 }
 
@@ -13,20 +12,19 @@ body, html, #cesiumContainer {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-width: calc(100% - 20px);
 }
 
 #sidebar {
-    width: 320px;
-    background: rgba(15, 15, 15, 0.9);
+    width: 300px;
+    background: rgba(10, 10, 10, 0.85);
     color: white;
-    padding: 15px;
+    padding: 20px;
     border-radius: 12px;
     pointer-events: auto;
-    max-height: 80vh;
+    max-height: 85vh;
     overflow-y: auto;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(8px);
     transition: transform 0.3s ease;
 }
 
@@ -35,80 +33,53 @@ body, html, #cesiumContainer {
 }
 
 .toggle-btn {
-    width: 40px;
-    height: 40px;
-    background: rgba(15, 15, 15, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 44px;
+    height: 44px;
+    background: #111;
+    border: 1px solid #333;
     border-radius: 8px;
     color: white;
     cursor: pointer;
     pointer-events: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
-h1 { font-size: 1.2rem; margin: 0 0 15px 0; color: #fff; font-weight: 600; }
+h1 { font-size: 1.2rem; margin: 0 0 15px 0; color: #30bced; }
 
 .search-box input {
     width: 100%;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px;
+    background: #222;
+    border: 1px solid #444;
     color: white;
-    border-radius: 8px;
-    box-sizing: border-box;
+    border-radius: 6px;
     margin-bottom: 15px;
-    outline: none;
 }
-
-.search-box input:focus { border-color: #30bced; }
 
 .categories {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 5px;
     margin-bottom: 15px;
 }
 
 .categories button {
-    background: rgba(255, 255, 255, 0.1);
-    color: #eee;
+    background: #333;
+    color: #fff;
     border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
+    padding: 5px 10px;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 0.75rem;
-    transition: background 0.2s;
-}
-
-.categories button:hover { background: rgba(255, 255, 255, 0.2); }
-
-#landmark-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    font-size: 0.7rem;
 }
 
 .landmark-item {
     padding: 10px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    margin-bottom: 5px;
     cursor: pointer;
-    border: 1px solid transparent;
 }
 
-.landmark-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-.landmark-item .name { font-weight: 500; font-size: 0.9rem; }
-.landmark-item .type { font-size: 0.7rem; color: #aaa; margin-top: 2px; }
-
-/* Mobile Adaptations */
-@media (max-width: 480px) {
-    #sidebar {
-        width: calc(100vw - 40px);
-    }
-}
+.landmark-item:hover { background: rgba(255, 255, 255, 0.1); }
+.landmark-item .name { font-weight: bold; font-size: 0.85rem; }
+.landmark-item .type { font-size: 0.7rem; color: #888; }

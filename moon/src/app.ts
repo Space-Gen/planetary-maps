@@ -1,14 +1,21 @@
 declare var Cesium: any;
 
-// Fallback to standard Cesium globe first to ensure visibility
+// Moon Ellipsoid (1737.4 km)
+const moonEllipsoid = new Cesium.Ellipsoid(1737400, 1737400, 1737400);
+
+const imageryProvider = new Cesium.UrlTemplateImageryProvider({
+    url: './tiles/imagery/{z}/{x}/{y}.png',
+    maximumLevel: 5,
+    credit: 'NASA/LRO/WAC/USGS',
+    tilingScheme: new Cesium.GeographicTilingScheme({ ellipsoid: moonEllipsoid })
+});
+
 const viewer = new Cesium.Viewer('cesiumContainer', {
-    imageryProvider: new Cesium.UrlTemplateImageryProvider({
-        url: './tiles/imagery/{z}/{x}/{y}.png',
-        maximumLevel: 5,
-        credit: 'NASA/LRO/WAC/USGS'
-    }),
+    baseLayer: new Cesium.ImageryLayer(imageryProvider),
     terrainProvider: new Cesium.CesiumTerrainProvider({
-        url: './tiles/terrain'
+        url: './tiles/terrain',
+        requestVertexNormals: false,
+        ellipsoid: moonEllipsoid
     }),
     baseLayerPicker: false,
     geocoder: false,
@@ -23,13 +30,15 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     skyBox: false
 });
 
-// Moon-like aesthetic on standard globe
+viewer.scene.globe.ellipsoid = moonEllipsoid;
 viewer.scene.globe.baseColor = Cesium.Color.GRAY;
 viewer.scene.globe.enableLighting = false;
 viewer.scene.backgroundColor = Cesium.Color.BLACK;
 
-// Force view
-viewer.camera.flyHome(0);
+// Focus camera on the Moon
+viewer.camera.setView({
+    destination: Cesium.Cartesian3.fromDegrees(0, 0, 4000000)
+});
 
 let allLandmarks: any[] = [];
 const dataSource = new Cesium.CustomDataSource('landmarks');

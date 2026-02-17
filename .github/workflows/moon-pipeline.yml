@@ -98,11 +98,10 @@ jobs:
       - name: Merge Artifacts
         run: |
           # Flatten the structure from download-artifact
-          cp artifacts/app-bundle/index.html dist/
-          cp artifacts/app-bundle/moon/* dist/moon/
-          cp -r artifacts/landmarks-data/* dist/moon/data/
-          cp -r artifacts/imagery-tiles/* dist/moon/tiles/imagery/
-          cp -r artifacts/terrain-tiles/* dist/moon/tiles/terrain/
+          cp -r artifacts/app-bundle/* dist/
+          cp -rv artifacts/landmarks-data/* dist/moon/data/
+          cp -rv artifacts/imagery-tiles/* dist/moon/tiles/imagery/
+          cp -rv artifacts/terrain-tiles/* dist/moon/tiles/terrain/
           ls -R dist/
 
       - name: Upload Pages Artifact

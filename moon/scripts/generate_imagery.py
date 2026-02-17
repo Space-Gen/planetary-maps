@@ -21,12 +21,13 @@ def generate_imagery():
     env["PROJ_IGNORE_CELESTIAL_BODY"] = "YES"
     
     # Using gdal2tiles via subprocess for reliability and performance
+    # -p geodetic is CRITICAL for planetary/global geographic maps
     try:
         subprocess.run([
             "gdal2tiles.py",
             "--zoom=0-5",
             "--processes=4",
-            "--xyz",
+            "--profile=geodetic", # Changed from --xyz to --profile=geodetic
             "--webviewer=none",
             input_wac,
             output_dir

@@ -11,7 +11,7 @@ def generate_imagery():
 
     size = os.path.getsize(input_mosaic)
     print(f"Input file size: {size / (1024*1024):.2f} MB")
-    if size < 100: # Slightly smaller for Mars mosaics sometimes
+    if size < 50: 
         print("ERROR: Input file is too small.")
         return
 
@@ -21,13 +21,13 @@ def generate_imagery():
     env["PROJ_IGNORE_CELESTIAL_BODY"] = "YES"
     
     # Using gdal2tiles via subprocess for reliability and performance
-    # -p geodetic is CRITICAL for planetary/global geographic maps
+    # --profile=mercator is standard for web maps like MapLibre
     try:
         subprocess.run([
             "gdal2tiles.py",
             "--zoom=0-5",
             "--processes=4",
-            "--profile=geodetic", # Changed from --xyz to --profile=geodetic
+            "--profile=mercator",
             "--webviewer=none",
             input_mosaic,
             output_dir

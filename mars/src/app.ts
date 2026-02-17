@@ -25,7 +25,7 @@ const map = new maplibregl.Map({
         ]
     },
     center: [0, 0],
-    zoom: 1,
+    zoom: 0.5,
     projection: 'globe' 
 });
 

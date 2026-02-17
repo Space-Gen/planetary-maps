@@ -8,8 +8,6 @@ on:
     paths:
       - 'moon/**'
       - '.github/workflows/moon-pipeline.yml'
-      - 'index.html'
-      - 'README.md'
   workflow_dispatch:
 
 env:
@@ -32,7 +30,7 @@ jobs:
           python3 moon/scripts/process_landmarks.py
       - uses: actions/upload-artifact@v4
         with:
-          name: landmarks-data
+          name: moon-landmarks-data
           path: moon/public/data/
 
   imagery:
@@ -48,7 +46,7 @@ jobs:
           /usr/bin/python3 moon/scripts/generate_imagery.py
       - uses: actions/upload-artifact@v4
         with:
-          name: imagery-tiles
+          name: moon-imagery-tiles
           path: moon/public/tiles/imagery/
 
   terrain:
@@ -66,7 +64,7 @@ jobs:
           /usr/bin/python3 moon/scripts/generate_terrain.py
       - uses: actions/upload-artifact@v4
         with:
-          name: terrain-tiles
+          name: moon-terrain-tiles
           path: moon/public/tiles/terrain/
 
   app:
@@ -86,7 +84,7 @@ jobs:
           cp moon/public/ui.css stage/moon/
       - uses: actions/upload-artifact@v4
         with:
-          name: app-bundle
+          name: moon-app-bundle
           path: stage/
 
   deploy:
@@ -105,16 +103,10 @@ jobs:
       
       - name: Merge Artifacts
         run: |
-          # Copy core app files from app-bundle (preserving root index.html and moon/ structure)
-          cp -rv artifacts/app-bundle/* dist/
-          
-          # Copy data and tiles into their respective moon subdirectories
-          cp -rv artifacts/landmarks-data/* dist/moon/data/
-          cp -rv artifacts/imagery-tiles/* dist/moon/tiles/imagery/
-          cp -rv artifacts/terrain-tiles/* dist/moon/tiles/terrain/
-          
-          # Verify the final structure
-          ls -R dist/
+          cp -rv artifacts/moon-app-bundle/* dist/
+          cp -rv artifacts/moon-landmarks-data/* dist/moon/data/
+          cp -rv artifacts/moon-imagery-tiles/* dist/moon/tiles/imagery/
+          cp -rv artifacts/moon-terrain-tiles/* dist/moon/tiles/terrain/
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3

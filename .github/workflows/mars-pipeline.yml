@@ -78,6 +78,7 @@ jobs:
       - name: Stage App
         run: |
           mkdir -p stage/mars
+          cp index.html stage/
           cp mars/public/index.html stage/mars/
           cp mars/public/app.js stage/mars/
           cp mars/public/ui.css stage/mars/
@@ -103,16 +104,10 @@ jobs:
       
       - name: Merge Artifacts
         run: |
-          # Copy core app files from app-bundle
           cp -rv artifacts/mars-app-bundle/* dist/
-          
-          # Copy data and tiles into their respective mars subdirectories
           cp -rv artifacts/mars-landmarks-data/* dist/mars/data/
           cp -rv artifacts/mars-imagery-tiles/* dist/mars/tiles/imagery/
           cp -rv artifacts/mars-terrain-tiles/* dist/mars/tiles/terrain/
-          
-          # Verify the final structure
-          ls -R dist/
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3

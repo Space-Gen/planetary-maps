@@ -7,7 +7,7 @@ const getBasePath = () => {
 
 const map = new maplibregl.Map({
     container: 'map',
-    zoom: 1,
+    zoom: 0.5,
     center: [0, 0],
     style: {
         version: 8,

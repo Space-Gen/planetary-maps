@@ -1,14 +1,21 @@
 declare var maplibregl: any;
 
+// Helper to get base path for GitHub Pages
+const getBasePath = () => {
+    return window.location.href.split('index.html')[0];
+};
+
 const map = new maplibregl.Map({
     container: 'map',
+    zoom: 1,
+    center: [0, 0],
     style: {
         version: 8,
         sources: {
             'moon-imagery': {
                 type: 'raster',
                 tiles: [
-                    window.location.href.replace('index.html', '') + 'tiles/imagery/{z}/{x}/{y}.png'
+                    getBasePath() + 'tiles/imagery/{z}/{x}/{y}.png'
                 ],
                 tileSize: 256,
                 attribution: 'NASA/LROC/WAC'
@@ -16,24 +23,35 @@ const map = new maplibregl.Map({
         },
         layers: [
             {
+                id: 'background',
+                type: 'background',
+                paint: { 'background-color': '#050505' }
+            },
+            {
                 id: 'moon-layer',
                 type: 'raster',
                 source: 'moon-imagery',
                 minzoom: 0,
-                maxzoom: 6
+                maxzoom: 10
             }
         ]
     },
-    center: [0, 0],
-    zoom: 1,
-    projection: 'globe' 
+    projection: 'globe', // Ensure 3D Globe is forced
+    renderWorldCopies: false, // Prevents horizontal scrolling wrap
+    antialias: true
 });
 
+// Configure Globe aesthetic
 map.on('style.load', () => {
     map.setFog({
         color: 'rgb(0, 0, 0)',
-        range: [1, 10]
+        range: [1, 10],
+        'high-color': 'rgb(20, 20, 20)',
+        'space-color': 'rgb(0, 0, 0)'
     });
+    
+    // Add 3D Terrain if available
+    // MapLibre uses Terrain-RGB or custom protocols
 });
 
 let allLandmarks: any[] = [];
@@ -68,7 +86,7 @@ function renderLandmarks(landmarks: any[]) {
             type: 'circle',
             source: 'landmarks',
             paint: {
-                'circle-radius': ['*', ['get', 'importance'], 2],
+                'circle-radius': ['interpolate', ['linear'], ['zoom'], 1, 2, 5, 6],
                 'circle-color': '#30bced',
                 'circle-stroke-width': 1,
                 'circle-stroke-color': '#fff'
@@ -78,10 +96,11 @@ function renderLandmarks(landmarks: any[]) {
             id: 'landmark-labels',
             type: 'symbol',
             source: 'landmarks',
+            minzoom: 2,
             layout: {
                 'text-field': ['get', 'name'],
-                'text-size': 12,
-                'text-offset': [0, 1.5],
+                'text-size': 11,
+                'text-offset': [0, 1.2],
                 'text-anchor': 'top'
             },
             paint: {
@@ -109,7 +128,8 @@ function populateSidebar(landmarks: any[]) {
             item.onclick = () => {
                 map.flyTo({
                     center: [lm.lon, lm.lat],
-                    zoom: 4,
+                    zoom: 5,
+                    duration: 2000,
                     essential: true
                 });
             };

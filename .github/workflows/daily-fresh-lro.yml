@@ -3,6 +3,8 @@ name: Daily Fresh LRO Stacker
 on:
   schedule:
     - cron: '0 12 * * *' # Every day at noon
+  push:
+    branches: [ feat/daily-fresh-lro ]
   workflow_dispatch:
 
 permissions:

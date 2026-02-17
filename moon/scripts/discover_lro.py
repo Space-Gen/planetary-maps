@@ -22,8 +22,12 @@ def discover_latest_strips():
         {"id": f"M987654321RE_{today}", "url": "https://lroc.pds.asu.edu/data/LRO-L-LROC-3-CDR-V1.0/LROLRC_0001/DATA/MAP/2023250/WAC/M1131033393ME.tif"}
     ]
     
-    # Output for GitHub Actions Matrix
-    print(f"::set-output name=strips::{json.dumps(recent_strips)}")
+    # Output for GitHub Actions Matrix using the modern GITHUB_OUTPUT environment variable
+    if "GITHUB_OUTPUT" in os.environ:
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"strips={json.dumps(recent_strips)}\n")
+    else:
+        print(f"strips={json.dumps(recent_strips)}")
 
 if __name__ == "__main__":
     discover_latest_strips()

@@ -1,21 +1,9 @@
 declare var Cesium: any;
 
-// Moon Ellipsoid (1737.4 km)
-const moonEllipsoid = new Cesium.Ellipsoid(1737400, 1737400, 1737400);
-
-const imageryProvider = new Cesium.UrlTemplateImageryProvider({
-    url: './tiles/imagery/{z}/{x}/{y}.png',
-    maximumLevel: 5,
-    credit: 'NASA/LRO/WAC/USGS',
-    tilingScheme: new Cesium.GeographicTilingScheme({ ellipsoid: moonEllipsoid })
-});
-
+// Use a known working imagery source to verify rendering first
 const viewer = new Cesium.Viewer('cesiumContainer', {
-    baseLayer: new Cesium.ImageryLayer(imageryProvider),
-    terrainProvider: new Cesium.CesiumTerrainProvider({
-        url: './tiles/terrain',
-        requestVertexNormals: false,
-        ellipsoid: moonEllipsoid
+    imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+        url : 'https://a.tile.openstreetmap.org/'
     }),
     baseLayerPicker: false,
     geocoder: false,
@@ -30,15 +18,24 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     skyBox: false
 });
 
-viewer.scene.globe.ellipsoid = moonEllipsoid;
+// Moon aesthetic fallback
 viewer.scene.globe.baseColor = Cesium.Color.GRAY;
-viewer.scene.globe.enableLighting = false;
 viewer.scene.backgroundColor = Cesium.Color.BLACK;
 
-// Focus camera on the Moon
-viewer.camera.setView({
-    destination: Cesium.Cartesian3.fromDegrees(0, 0, 4000000)
+// Add our custom Moon imagery as an overlay to see if it loads
+const moonImagery = new Cesium.UrlTemplateImageryProvider({
+    url: './tiles/imagery/{z}/{x}/{y}.png',
+    maximumLevel: 5,
+    credit: 'NASA/LRO/WAC/USGS',
+    // Cesium uses TMS (Y from bottom) by default for UrlTemplate, 
+    // but gdal2tiles -p geodetic produces standard XYZ. 
+    // We may need to flip Y or use a TilingScheme.
+    tilingScheme: new Cesium.GeographicTilingScheme()
 });
+viewer.imageryLayers.addImageryProvider(moonImagery);
+
+// Force view
+viewer.camera.flyHome(0);
 
 let allLandmarks: any[] = [];
 const dataSource = new Cesium.CustomDataSource('landmarks');

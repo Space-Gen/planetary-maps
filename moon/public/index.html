@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lunar Explorer - 3D Moon Map</title>
+    <title>Moon Spotlights - High-Res NAC Viewer</title>
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <script>
         window.CESIUM_BASE_URL = 'https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/';
-        // Cesium Ion token is required for the default skybox/stars
-        // Using a public token or leaving it empty if you have your own
     </script>
     <link rel="stylesheet" href="ui.css">
 </head>
@@ -18,22 +16,19 @@
     <div id="ui-overlay">
         <button class="toggle-btn" id="sidebar-toggle">☰</button>
         <div id="sidebar">
-            <h1>Lunar Explorer</h1>
-            <div class="search-box">
-                <input type="text" id="landmark-search" placeholder="Search features...">
-            </div>
+            <h1>Lunar Spotlights</h1>
+            <p style="font-size: 0.8rem; color: #888;">Viewing high-res LRO NAC imagery (0.5m/px)</p>
+            
             <div class="categories">
-                <button onclick="filterLandmarks('all')">All</button>
-                <button onclick="filterLandmarks('Crater')">Craters</button>
-                <button onclick="filterLandmarks('Mare')">Maria</button>
-                <button onclick="filterLandmarks('Landing site')">Landing Sites</button>
+                <button onclick="gotoSpotlight(23.473, 0.674)">Apollo 11</button>
+                <button onclick="gotoSpotlight(153.985, -41.638)">Chang'e 6</button>
             </div>
+            
             <div id="landmark-list"></div>
         </div>
     </div>
-        <script>
-            document.write('<script src="app.js?v=' + Date.now() + '"><\/script>');
-        </script>
-    </body>
-    </html>
-    
+    <script>
+        document.write('<script src="app.js?v=' + Date.now() + '"><\/script>');
+    </script>
+</body>
+</html>

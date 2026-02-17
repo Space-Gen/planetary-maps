@@ -1,0 +1,64 @@
+name: Daily Fresh LRO Stacker
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Every day at noon
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      strips: ${{ steps.finder.outputs.strips }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: finder
+        run: python3 moon/scripts/discover_lro.py
+
+  process-strips:
+    needs: discover
+    strategy:
+      matrix:
+        strip: ${{ fromJson(needs.discover.outputs.strips) }}
+      fail-fast: false
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GDAL
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin
+      - name: Tile Orbital Strip
+        run: |
+          mkdir -p fresh_tiles/${{ matrix.strip.id }}
+          curl -fL -o raw.tif ${{ matrix.strip.url }}
+          # Tile at higher zoom (up to 8) for fresh streaks
+          gdal2tiles.py --zoom=6-8 --processes=4 --xyz --webviewer=none raw.tif fresh_tiles/${{ matrix.strip.id }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: strip-${{ matrix.strip.id }}
+          path: fresh_tiles/${{ matrix.strip.id }}
+
+  merge-and-deploy:
+    needs: process-strips
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all fresh strips
+        uses: actions/download-artifact@v4
+        with:
+          path: fresh_artifacts
+      - name: Layer Fresh Data
+        run: |
+          mkdir -p dist/moon/tiles/imagery
+          # Move fresh tiles into the main imagery directory
+          # Newer tiles from matrix runners will overwrite older ones
+          cp -rv fresh_artifacts/strip-*/* dist/moon/tiles/imagery/
+      - name: Deploy Update
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+      - uses: actions/deploy-pages@v4

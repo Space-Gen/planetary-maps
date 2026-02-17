@@ -37,8 +37,8 @@ jobs:
         run: |
           mkdir -p fresh_tiles/${{ matrix.strip.id }}
           curl -fL -o raw.tif ${{ matrix.strip.url }}
-          # Tile at higher zoom (up to 8) for fresh streaks
-          gdal2tiles.py --zoom=6-8 --processes=4 --xyz --webviewer=none raw.tif fresh_tiles/${{ matrix.strip.id }}
+          # Tile using geodetic profile for proper globe alignment
+          gdal2tiles.py --zoom=6-8 --processes=4 --profile=geodetic --webviewer=none raw.tif fresh_tiles/${{ matrix.strip.id }}
       - uses: actions/upload-artifact@v4
         with:
           name: strip-${{ matrix.strip.id }}

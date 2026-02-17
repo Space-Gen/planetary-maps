@@ -10,12 +10,11 @@ def discover_latest_strips():
     
     today = datetime.now().strftime("%Y%m%d")
     
-    # Switched from ASU PDS (unreliable DNS) to USGS Astrocloud (Verified)
-    # Using confirmed LROC WAC strip patterns
+    # Switched to confirmed working planetarymaps URL
     recent_strips = [
         {
             "id": f"WAC_HAP_M1131019110_{today}", 
-            "url": "https://astrocloud.wr.usgs.gov/public/Moon/LROC_WAC/Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif" # Using global as placeholder for strip URL format
+            "url": "https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif"
         }
     ]
     

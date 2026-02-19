@@ -1,73 +1,57 @@
-declare var maplibregl: any;
+declare var Cesium: any;
 
 /**
- * Planetary Map Engine - Moon (Browser-Extensive Version)
- * Directly consumes NASA/ASU APIs for infinite zoom without local tiling.
+ * Planetary Map Engine - Moon (Cesium Browser-Extensive Version)
  */
 
-const map = new maplibregl.Map({
-    container: 'map',
-    style: {
-        version: 8,
-        sources: {
-            // NASA Moon Trek - High-quality Global Base (WAC)
-            'moon-base': {
-                type: 'raster',
-                tiles: [
-                    'https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0/default/default028mm/{z}/{x}/{y}.jpg'
-                ],
-                tileSize: 256,
-                attribution: 'NASA/LROC/WAC (Moon Trek)'
-            },
-            // ASU Lunaserv WMS - Dynamic High-Res NAC Stitching (Extreme Zoom)
-            'moon-nac': {
-                type: 'raster',
-                tiles: [
-                    'https://webmap.lroc.asu.edu/lunaserv/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=luna_nac_overlay&WIDTH=256&HEIGHT=256&CRS=EPSG:3857&BBOX={bbox-epsg-3857}&FORMAT=image/png'
-                ],
-                tileSize: 256,
-                attribution: 'NASA/LROC/NAC (ASU Lunaserv)'
-            }
-        },
-        layers: [
-            {
-                id: 'moon-base-layer',
-                type: 'raster',
-                source: 'moon-base',
-                minzoom: 0,
-                maxzoom: 22
-            },
-            {
-                id: 'moon-nac-layer',
-                type: 'raster',
-                source: 'moon-nac',
-                minzoom: 10,
-                maxzoom: 22,
-                paint: {
-                    'raster-opacity': [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        10, 0,
-                        12, 1
-                    ]
-                }
-            }
-        ]
+// Define Moon Ellipsoid
+const moonEllipsoid = new Cesium.Ellipsoid(1737400, 1737400, 1737400);
+
+const viewer = new Cesium.Viewer('cesiumContainer', {
+    baseLayer: new Cesium.ImageryLayer(new Cesium.UrlTemplateImageryProvider({
+        url: 'https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0/default/default028mm/{z}/{x}/{y}.jpg',
+        tilingScheme: new Cesium.WebMercatorTilingScheme({ ellipsoid: moonEllipsoid }),
+        credit: 'NASA/LROC/WAC (Moon Trek)'
+    })),
+    baseLayerPicker: false,
+    geocoder: false,
+    homeButton: true,
+    infoBox: true,
+    sceneModePicker: false,
+    selectionIndicator: true,
+    timeline: false,
+    animation: false,
+    navigationHelpButton: false,
+    skyBox: false,
+    msaaSamples: 4
+});
+
+// Configure Moon Environment
+viewer.scene.globe.ellipsoid = moonEllipsoid;
+viewer.scene.globe.baseColor = Cesium.Color.BLACK;
+viewer.scene.globe.enableLighting = false;
+viewer.scene.backgroundColor = Cesium.Color.BLACK;
+
+// Add High-Res NAC WMS Layer (Dynamic)
+const nacLayer = viewer.imageryLayers.addImageryProvider(new Cesium.WebMapServiceImageryProvider({
+    url: 'https://webmap.lroc.asu.edu/lunaserv/wms',
+    layers: 'luna_nac_overlay',
+    parameters: {
+        transparent: 'true',
+        format: 'image/png'
     },
-    center: [0, 0],
-    zoom: 0.5,
-    projection: 'globe' 
-});
+    tilingScheme: new Cesium.WebMercatorTilingScheme({ ellipsoid: moonEllipsoid }),
+    credit: 'NASA/LROC/NAC (ASU Lunaserv)'
+}));
 
-map.on('style.load', () => {
-    map.setFog({
-        color: 'rgb(0, 0, 0)',
-        range: [1, 10]
-    });
-});
+// Set visibility threshold for NAC layer
+nacLayer.show = true;
+nacLayer.alpha = 1.0;
 
+// Landmark Data
 let allLandmarks: any[] = [];
+const dataSource = new Cesium.CustomDataSource('landmarks');
+viewer.dataSources.add(dataSource);
 
 async function loadLandmarks() {
     try {
@@ -81,47 +65,32 @@ async function loadLandmarks() {
 }
 
 function renderLandmarks(landmarks: any[]) {
-    const geojson = {
-        type: 'FeatureCollection',
-        features: landmarks.filter(lm => lm.importance >= 2).map(lm => ({
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [lm.lon, lm.lat] },
-            properties: { ...lm }
-        }))
-    };
-
-    if (map.getSource('landmarks')) {
-        map.getSource('landmarks').setData(geojson);
-    } else {
-        map.addSource('landmarks', { type: 'geojson', data: geojson });
-        map.addLayer({
-            id: 'landmark-points',
-            type: 'circle',
-            source: 'landmarks',
-            paint: {
-                'circle-radius': ['*', ['get', 'importance'], 2],
-                'circle-color': '#30bced',
-                'circle-stroke-width': 1,
-                'circle-stroke-color': '#fff'
-            }
-        });
-        map.addLayer({
-            id: 'landmark-labels',
-            type: 'symbol',
-            source: 'landmarks',
-            layout: {
-                'text-field': ['get', 'name'],
-                'text-size': 12,
-                'text-offset': [0, 1.5],
-                'text-anchor': 'top'
-            },
-            paint: {
-                'text-color': '#fff',
-                'text-halo-color': '#000',
-                'text-halo-width': 1
-            }
-        });
-    }
+    dataSource.entities.removeAll();
+    landmarks.forEach(lm => {
+        if (lm.importance >= 2) {
+            dataSource.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat, 0, moonEllipsoid),
+                point: {
+                    pixelSize: 8,
+                    color: Cesium.Color.fromCssColorString('#30bced'),
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 1,
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 10000000)
+                },
+                label: {
+                    text: lm.name,
+                    font: '14px sans-serif',
+                    fillColor: Cesium.Color.WHITE,
+                    outlineColor: Cesium.Color.BLACK,
+                    outlineWidth: 2,
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    pixelOffset: new Cesium.Cartesian2(0, -12),
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 2000000)
+                }
+            });
+        }
+    });
 }
 
 function populateSidebar(landmarks: any[]) {
@@ -138,10 +107,8 @@ function populateSidebar(landmarks: any[]) {
             item.className = 'landmark-item';
             item.innerHTML = `<div class="name">${lm.name}</div><div class="type">${lm.type}</div>`;
             item.onclick = () => {
-                map.flyTo({
-                    center: [lm.lon, lm.lat],
-                    zoom: 4,
-                    essential: true
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat, 500000, moonEllipsoid)
                 });
             };
             list.appendChild(item);
@@ -158,4 +125,4 @@ document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
     populateSidebar(filtered);
 };
 
-map.on('load', loadLandmarks);
+loadLandmarks();

@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mars Explorer - Planetary Maps</title>
-    <!-- MapLibre GL JS: Much lighter than Cesium -->
-    <script src="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js"></script>
-    <link href="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css" rel="stylesheet" />
+    <title>Mars Explorer - Cesium 3D Mars</title>
+    <!-- CesiumJS -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <link rel="stylesheet" href="ui.css">
 </head>
 <body>
-    <div id="map"></div>
+    <div id="cesiumContainer"></div>
     <div id="ui-overlay">
         <button class="toggle-btn" id="sidebar-toggle">☰</button>
         <div id="sidebar">
             <h1>Mars Explorer</h1>
-            <p style="font-size: 0.8rem; color: #888;">Powered by MapLibre GL (Lightweight)</p>
+            <p style="font-size: 0.8rem; color: #888;">Powered by Cesium (Browser-Extensive)</p>
             <div class="search-box">
                 <input type="text" id="landmark-search" placeholder="Search features...">
             </div>
@@ -28,8 +28,6 @@
             <div id="landmark-list"></div>
         </div>
     </div>
-    <script>
-        document.write('<script src="app.js?v=' + Date.now() + '"><\/script>');
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>

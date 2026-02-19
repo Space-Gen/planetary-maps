@@ -8,10 +8,10 @@ const map = new maplibregl.Map({
             'mars-imagery': {
                 type: 'raster',
                 tiles: [
-                    window.location.href.replace('index.html', '') + 'tiles/imagery/{z}/{x}/{y}.png'
+                    'https://api.nasa.gov/mars-wmts/catalog/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0//default/default028mm/{z}/{y}/{x}.jpg'
                 ],
                 tileSize: 256,
-                attribution: 'NASA/Viking/MOLA/USGS'
+                attribution: 'NASA/JPL-Caltech/USGS'
             }
         },
         layers: [
@@ -20,7 +20,7 @@ const map = new maplibregl.Map({
                 type: 'raster',
                 source: 'mars-imagery',
                 minzoom: 0,
-                maxzoom: 6
+                maxzoom: 7
             }
         ]
     },

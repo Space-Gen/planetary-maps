@@ -8,7 +8,7 @@ const map = new maplibregl.Map({
             'moon-imagery': {
                 type: 'raster',
                 tiles: [
-                    window.location.href.replace('index.html', '') + 'tiles/imagery/{z}/{x}/{y}.png'
+                    'https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0/default/default028mm/{z}/{y}/{x}.jpg'
                 ],
                 tileSize: 256,
                 attribution: 'NASA/LROC/WAC'

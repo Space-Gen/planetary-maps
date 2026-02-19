@@ -3,31 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lunar Explorer - Cesium 3D Moon</title>
+    <title>Moon Hub 3D - Planetary Exploration</title>
     <!-- CesiumJS -->
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <link rel="stylesheet" href="ui.css">
 </head>
 <body>
-    <div id="cesiumContainer"></div>
-    <div id="ui-overlay">
-        <button class="toggle-btn" id="sidebar-toggle">☰</button>
-        <div id="sidebar">
-            <h1>Lunar Explorer</h1>
-            <p style="font-size: 0.8rem; color: #888;">Powered by Cesium (Browser-Extensive)</p>
-            <div class="search-box">
-                <input type="text" id="landmark-search" placeholder="Search features...">
+    <header>
+        <div class="logo">🌕</div>
+        <h2>Moon Hub 3D</h2>
+        <div style="flex: 1;"></div>
+        <nav style="display: flex; gap: 20px; font-size: 0.9rem;">
+            <a href="../index.html" style="color: #aaa; text-decoration: none;">Home</a>
+            <a href="../mars/index.html" style="color: #aaa; text-decoration: none;">Mars</a>
+        </nav>
+    </header>
+
+    <main id="main-viewport">
+        <div id="cesiumContainer"></div>
+        
+        <div id="ui-overlay">
+            <button class="toggle-btn" id="sidebar-toggle">☰</button>
+            <div id="sidebar">
+                <h1>Lunar Explorer</h1>
+                <p style="font-size: 0.8rem; color: #888;">Cesium-Powered High Fidelity Globe</p>
+                <div class="search-box">
+                    <input type="text" id="landmark-search" placeholder="Search features...">
+                </div>
+                <div class="categories">
+                    <button onclick="filterLandmarks('all')">All</button>
+                    <button onclick="filterLandmarks('Crater')">Craters</button>
+                    <button onclick="filterLandmarks('Mare')">Maria</button>
+                    <button onclick="filterLandmarks('Landing site')">Landing Sites</button>
+                </div>
+                <div id="landmark-list"></div>
             </div>
-            <div class="categories">
-                <button onclick="filterLandmarks('all')">All</button>
-                <button onclick="filterLandmarks('Crater')">Craters</button>
-                <button onclick="filterLandmarks('Mare')">Maria</button>
-                <button onclick="filterLandmarks('Landing site')">Landing Sites</button>
-            </div>
-            <div id="landmark-list"></div>
         </div>
-    </div>
+    </main>
+
+    <footer>
+        <div>&copy; 2026 Planetary Maps Hub</div>
+        <div style="display: flex; gap: 15px;">
+            <span>Data: NASA/LROC/ASU</span>
+            <span>Engine: CesiumJS</span>
+        </div>
+    </footer>
+
     <script src="app.js"></script>
 </body>
 </html>

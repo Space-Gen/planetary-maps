@@ -1,12 +1,61 @@
-body, html, #cesiumContainer {
+body, html {
     width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
     background: #000;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    height: 60px;
+    background: rgba(10, 10, 10, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 200;
+    backdrop-filter: blur(10px);
+}
+
+.logo {
+    font-size: 1.5rem;
+    margin-right: 15px;
+}
+
+header h2 {
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 500;
+    letter-spacing: 1px;
+    color: #fff;
+}
+
+#main-viewport {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+#cesiumContainer {
+    width: 100%; height: 100%;
+}
+
+footer {
+    height: 40px;
+    background: rgba(10, 10, 10, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-size: 0.75rem;
+    color: #888;
+    z-index: 200;
 }
 
 #ui-overlay {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 20px;
+    left: 20px;
     z-index: 100;
     pointer-events: none;
     display: flex;
@@ -21,7 +70,7 @@ body, html, #cesiumContainer {
     padding: 20px;
     border-radius: 12px;
     pointer-events: auto;
-    max-height: 85vh;
+    max-height: 70vh;
     overflow-y: auto;
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(8px);
@@ -33,8 +82,8 @@ body, html, #cesiumContainer {
 }
 
 .toggle-btn {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     background: #111;
     border: 1px solid #333;
     border-radius: 8px;

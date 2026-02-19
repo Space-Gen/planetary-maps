@@ -12,8 +12,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   landmarks:
@@ -27,7 +25,7 @@ jobs:
           python3 moon/scripts/process_landmarks.py
       - uses: actions/upload-artifact@v4
         with:
-          name: moon-landmarks-data
+          name: moon-data
           path: moon/public/data/
 
   app:
@@ -47,33 +45,5 @@ jobs:
           cp moon/public/ui.css stage/moon/
       - uses: actions/upload-artifact@v4
         with:
-          name: moon-app-bundle
+          name: moon-app
           path: stage/
-
-  deploy:
-    needs: [landmarks, app]
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Prepare Workspace
-        run: mkdir -p dist/moon/data
-      
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-      
-      - name: Merge Artifacts
-        run: |
-          cp -rv artifacts/moon-app-bundle/* dist/
-          cp -rv artifacts/moon-landmarks-data/* dist/moon/data/
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

@@ -1,0 +1,51 @@
+name: Deploy Pages
+
+on:
+  workflow_run:
+    workflows: ["Moon Map Pipeline", "Mars Map Pipeline"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Merge and Build Site
+        run: |
+          mkdir -p dist/moon/data dist/mars/data
+          
+          # Root landing page from either app artifact
+          [ -d "artifacts/moon-app" ] && cp -rv artifacts/moon-app/index.html dist/ || true
+          [ -d "artifacts/mars-app" ] && cp -rv artifacts/mars-app/index.html dist/ || true
+          
+          # Moon App & Data
+          [ -d "artifacts/moon-app/moon" ] && cp -rv artifacts/moon-app/moon/* dist/moon/ || true
+          [ -d "artifacts/moon-data" ] && cp -rv artifacts/moon-data/* dist/moon/data/ || true
+          
+          # Mars App & Data
+          [ -d "artifacts/mars-app/mars" ] && cp -rv artifacts/mars-app/mars/* dist/mars/ || true
+          [ -d "artifacts/mars-data" ] && cp -rv artifacts/mars-data/* dist/mars/data/ || true
+          
+          ls -R dist/
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

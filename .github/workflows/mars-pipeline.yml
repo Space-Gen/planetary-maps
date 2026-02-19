@@ -12,8 +12,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   landmarks:
@@ -27,7 +25,7 @@ jobs:
           python3 mars/scripts/process_landmarks.py
       - uses: actions/upload-artifact@v4
         with:
-          name: mars-landmarks-data
+          name: mars-data
           path: mars/public/data/
 
   app:
@@ -47,34 +45,5 @@ jobs:
           cp mars/public/ui.css stage/mars/
       - uses: actions/upload-artifact@v4
         with:
-          name: mars-app-bundle
+          name: mars-app
           path: stage/
-
-  deploy:
-    needs: [landmarks, app]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Prepare Workspace
-        run: mkdir -p dist/mars/data
-      
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-      
-      - name: Merge Artifacts
-        run: |
-          cp -rv artifacts/mars-app-bundle/* dist/
-          cp -rv artifacts/mars-landmarks-data/* dist/mars/data/
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

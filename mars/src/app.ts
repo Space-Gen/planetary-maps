@@ -14,7 +14,7 @@ const map = new maplibregl.Map({
             'mars-base': {
                 type: 'raster',
                 tiles: [
-                    'https://api.nasa.gov/mars-wmts/catalog/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0//default/default028mm/{z}/{y}/{x}.jpg'
+                    'https://api.nasa.gov/mars-wmts/catalog/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0//default/default028mm/{z}/{x}/{y}.jpg'
                 ],
                 tileSize: 256,
                 attribution: 'NASA/JPL-Caltech/USGS (Mars Trek)'

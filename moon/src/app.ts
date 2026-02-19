@@ -14,7 +14,7 @@ const map = new maplibregl.Map({
             'moon-base': {
                 type: 'raster',
                 tiles: [
-                    'https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0/default/default028mm/{z}/{y}/{x}.jpg'
+                    'https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0/default/default028mm/{z}/{x}/{y}.jpg'
                 ],
                 tileSize: 256,
                 attribution: 'NASA/LROC/WAC (Moon Trek)'

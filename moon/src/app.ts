@@ -1,48 +1,55 @@
 declare var maplibregl: any;
 
+/**
+ * Planetary Map Engine - Moon (Browser-Extensive Version)
+ * Directly consumes NASA/ASU APIs for infinite zoom without local tiling.
+ */
+
 const map = new maplibregl.Map({
     container: 'map',
     style: {
         version: 8,
         sources: {
-            'moon-imagery': {
+            // NASA Moon Trek - High-quality Global Base (WAC)
+            'moon-base': {
                 type: 'raster',
                 tiles: [
                     'https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0/default/default028mm/{z}/{y}/{x}.jpg'
                 ],
                 tileSize: 256,
-                attribution: 'NASA/LROC/WAC'
+                attribution: 'NASA/LROC/WAC (Moon Trek)'
             },
-            'lroc-nac': {
+            // ASU Lunaserv WMS - Dynamic High-Res NAC Stitching (Extreme Zoom)
+            'moon-nac': {
                 type: 'raster',
                 tiles: [
                     'https://webmap.lroc.asu.edu/lunaserv/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=luna_nac_overlay&WIDTH=256&HEIGHT=256&CRS=EPSG:3857&BBOX={bbox-epsg-3857}&FORMAT=image/png'
                 ],
                 tileSize: 256,
-                attribution: 'NASA/LROC/NAC (ASU)'
+                attribution: 'NASA/LROC/NAC (ASU Lunaserv)'
             }
         },
         layers: [
             {
-                id: 'moon-layer',
+                id: 'moon-base-layer',
                 type: 'raster',
-                source: 'moon-imagery',
+                source: 'moon-base',
                 minzoom: 0,
                 maxzoom: 22
             },
             {
-                id: 'nac-layer',
+                id: 'moon-nac-layer',
                 type: 'raster',
-                source: 'lroc-nac',
-                minzoom: 12,
+                source: 'moon-nac',
+                minzoom: 10,
                 maxzoom: 22,
                 paint: {
                     'raster-opacity': [
                         'interpolate',
                         ['linear'],
                         ['zoom'],
-                        12, 0,
-                        13, 1
+                        10, 0,
+                        12, 1
                     ]
                 }
             }

@@ -2,16 +2,13 @@ name: Mars Map Pipeline
 
 on:
   schedule:
-    - cron: '0 1 * * *' # Daily at 1 AM (one hour after Moon)
+    - cron: '0 1 * * *'
   push:
     branches: [ main ]
     paths:
       - 'mars/**'
       - '.github/workflows/mars-pipeline.yml'
   workflow_dispatch:
-
-env:
-  PROJ_IGNORE_CELESTIAL_BODY: YES
 
 permissions:
   contents: read
@@ -32,40 +29,6 @@ jobs:
         with:
           name: mars-landmarks-data
           path: mars/public/data/
-
-  imagery:
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install GDAL
-        run: sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal
-      - name: Tile Imagery
-        run: |
-          mkdir -p mars/data mars/public/tiles/imagery
-          curl -fL --retry 3 -o mars/data/Mars_Global_Mosaic.tif https://api.nasa.gov/mars-wmts/catalog/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0//default/default028mm/0/0/0.jpg
-          /usr/bin/python3 mars/scripts/generate_imagery.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mars-imagery-tiles
-          path: mars/public/tiles/imagery/
-
-  terrain:
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install GDAL & QME
-        run: |
-          sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal python3-numpy
-          pip install quantized-mesh-encoder --break-system-packages || pip install quantized-mesh-encoder
-      - name: Generate Terrain
-        run: |
-          mkdir -p mars/data mars/public/tiles/terrain
-          curl -fL --retry 3 -o mars/data/Mars_Global_DEM.tif https://planetarymaps.usgs.gov/mosaic/Mars_MGS_MOLA_DEM_mosaic_global_463m.tif
-          /usr/bin/python3 mars/scripts/generate_terrain.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mars-terrain-tiles
-          path: mars/public/tiles/terrain/
 
   app:
     runs-on: ubuntu-latest
@@ -88,7 +51,7 @@ jobs:
           path: stage/
 
   deploy:
-    needs: [landmarks, imagery, terrain, app]
+    needs: [landmarks, app]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment:
@@ -96,7 +59,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Prepare Workspace
-        run: mkdir -p dist/mars/data dist/mars/tiles/imagery dist/mars/tiles/terrain
+        run: mkdir -p dist/mars/data
       
       - uses: actions/download-artifact@v4
         with:
@@ -106,8 +69,6 @@ jobs:
         run: |
           cp -rv artifacts/mars-app-bundle/* dist/
           cp -rv artifacts/mars-landmarks-data/* dist/mars/data/
-          cp -rv artifacts/mars-imagery-tiles/* dist/mars/tiles/imagery/
-          cp -rv artifacts/mars-terrain-tiles/* dist/mars/tiles/terrain/
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3

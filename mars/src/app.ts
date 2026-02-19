@@ -1,26 +1,57 @@
 declare var maplibregl: any;
 
+/**
+ * Planetary Map Engine - Mars (Browser-Extensive Version)
+ * Directly consumes NASA/ASU APIs for high-resolution planetary exploration.
+ */
+
 const map = new maplibregl.Map({
     container: 'map',
     style: {
         version: 8,
         sources: {
-            'mars-imagery': {
+            // NASA Mars Trek - Global Viking Color Mosaic
+            'mars-base': {
                 type: 'raster',
                 tiles: [
                     'https://api.nasa.gov/mars-wmts/catalog/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0//default/default028mm/{z}/{y}/{x}.jpg'
                 ],
                 tileSize: 256,
-                attribution: 'NASA/JPL-Caltech/USGS'
+                attribution: 'NASA/JPL-Caltech/USGS (Mars Trek)'
+            },
+            // ASU Mars Lunaserv - MOLA Color Shaded Relief for better surface detail
+            'mars-detail': {
+                type: 'raster',
+                tiles: [
+                    'https://webmap.lroc.asu.edu/lunaserv/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=mars_mola_color&WIDTH=256&HEIGHT=256&CRS=EPSG:3857&BBOX={bbox-epsg-3857}&FORMAT=image/png'
+                ],
+                tileSize: 256,
+                attribution: 'NASA/MGS/MOLA (ASU Lunaserv)'
             }
         },
         layers: [
             {
-                id: 'mars-layer',
+                id: 'mars-base-layer',
                 type: 'raster',
-                source: 'mars-imagery',
+                source: 'mars-base',
                 minzoom: 0,
-                maxzoom: 7
+                maxzoom: 22
+            },
+            {
+                id: 'mars-detail-layer',
+                type: 'raster',
+                source: 'mars-detail',
+                minzoom: 6,
+                maxzoom: 22,
+                paint: {
+                    'raster-opacity': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        6, 0,
+                        8, 1
+                    ]
+                }
             }
         ]
     },

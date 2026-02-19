@@ -1,57 +1,63 @@
 declare var maplibregl: any;
 
-// Helper to get base path for GitHub Pages
-const getBasePath = () => {
-    return window.location.href.split('index.html')[0];
-};
-
 const map = new maplibregl.Map({
     container: 'map',
-    zoom: 0.5,
-    center: [0, 0],
     style: {
         version: 8,
         sources: {
             'moon-imagery': {
                 type: 'raster',
                 tiles: [
-                    getBasePath() + 'tiles/imagery/{z}/{x}/{y}.png'
+                    window.location.href.replace('index.html', '') + 'tiles/imagery/{z}/{x}/{y}.png'
                 ],
                 tileSize: 256,
                 attribution: 'NASA/LROC/WAC'
+            },
+            'lroc-nac': {
+                type: 'raster',
+                tiles: [
+                    'https://webmap.lroc.asu.edu/lunaserv/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=luna_nac_overlay&WIDTH=256&HEIGHT=256&CRS=EPSG:3857&BBOX={bbox-epsg-3857}&FORMAT=image/png'
+                ],
+                tileSize: 256,
+                attribution: 'NASA/LROC/NAC (ASU)'
             }
         },
         layers: [
-            {
-                id: 'background',
-                type: 'background',
-                paint: { 'background-color': '#050505' }
-            },
             {
                 id: 'moon-layer',
                 type: 'raster',
                 source: 'moon-imagery',
                 minzoom: 0,
-                maxzoom: 10
+                maxzoom: 22
+            },
+            {
+                id: 'nac-layer',
+                type: 'raster',
+                source: 'lroc-nac',
+                minzoom: 12,
+                maxzoom: 22,
+                paint: {
+                    'raster-opacity': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        12, 0,
+                        13, 1
+                    ]
+                }
             }
         ]
     },
-    projection: 'globe', // Ensure 3D Globe is forced
-    renderWorldCopies: false, // Prevents horizontal scrolling wrap
-    antialias: true
+    center: [0, 0],
+    zoom: 0.5,
+    projection: 'globe' 
 });
 
-// Configure Globe aesthetic
 map.on('style.load', () => {
     map.setFog({
         color: 'rgb(0, 0, 0)',
-        range: [1, 10],
-        'high-color': 'rgb(20, 20, 20)',
-        'space-color': 'rgb(0, 0, 0)'
+        range: [1, 10]
     });
-    
-    // Add 3D Terrain if available
-    // MapLibre uses Terrain-RGB or custom protocols
 });
 
 let allLandmarks: any[] = [];
@@ -86,7 +92,7 @@ function renderLandmarks(landmarks: any[]) {
             type: 'circle',
             source: 'landmarks',
             paint: {
-                'circle-radius': ['interpolate', ['linear'], ['zoom'], 1, 2, 5, 6],
+                'circle-radius': ['*', ['get', 'importance'], 2],
                 'circle-color': '#30bced',
                 'circle-stroke-width': 1,
                 'circle-stroke-color': '#fff'
@@ -96,11 +102,10 @@ function renderLandmarks(landmarks: any[]) {
             id: 'landmark-labels',
             type: 'symbol',
             source: 'landmarks',
-            minzoom: 2,
             layout: {
                 'text-field': ['get', 'name'],
-                'text-size': 11,
-                'text-offset': [0, 1.2],
+                'text-size': 12,
+                'text-offset': [0, 1.5],
                 'text-anchor': 'top'
             },
             paint: {
@@ -128,8 +133,7 @@ function populateSidebar(landmarks: any[]) {
             item.onclick = () => {
                 map.flyTo({
                     center: [lm.lon, lm.lat],
-                    zoom: 5,
-                    duration: 2000,
+                    zoom: 4,
                     essential: true
                 });
             };

@@ -144,31 +144,33 @@ jobs:
 
   deploy:
     needs: [moon-data, moon-imagery, moon-terrain, mars-data, mars-imagery, mars-terrain, app]
-    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
     steps:
-      - name: Prepare Workspace
-        run: |
-          mkdir -p dist/moon/data dist/moon/tiles/imagery dist/moon/tiles/terrain
-          mkdir -p dist/mars/data dist/mars/tiles/imagery dist/mars/terrain
-      
-      - uses: actions/download-artifact@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
-      
+
       - name: Merge Hub Artifacts
         run: |
-          # Copy Hub Core
+          mkdir -p dist/moon/data dist/moon/tiles/imagery dist/moon/tiles/terrain
+          mkdir -p dist/mars/data dist/mars/tiles/imagery dist/mars/tiles/terrain
+          
+          # Hub Core
           cp -rv artifacts/hub-portal/* dist/
           
-          # Merge Moon
+          # Moon
           cp -rv artifacts/moon-data/* dist/moon/data/
           cp -rv artifacts/moon-imagery-tiles/* dist/moon/tiles/imagery/
           cp -rv artifacts/moon-terrain-tiles/* dist/moon/tiles/terrain/
           
-          # Merge Mars
+          # Mars
           cp -rv artifacts/mars-data/* dist/mars/data/
           cp -rv artifacts/mars-imagery-tiles/* dist/mars/tiles/imagery/
           cp -rv artifacts/mars-terrain-tiles/* dist/mars/tiles/terrain/

@@ -1,17 +1,18 @@
 declare var Cesium: any;
 
-/**
- * Planetary Map Engine - Mars (Cesium Browser-Extensive Version)
- */
-
-// Define Mars Ellipsoid (Average radius)
-const marsEllipsoid = new Cesium.Ellipsoid(3389500, 3389500, 3389500);
+// Mars Ellipsoid (3396.19 km)
+const marsEllipsoid = new Cesium.Ellipsoid(3396190, 3396190, 3396190);
 
 const viewer = new Cesium.Viewer('cesiumContainer', {
+    terrainProvider: new Cesium.CesiumTerrainProvider({
+        url: './tiles/terrain',
+        ellipsoid: marsEllipsoid
+    }),
     baseLayer: new Cesium.ImageryLayer(new Cesium.UrlTemplateImageryProvider({
-        url: 'https://api.nasa.gov/mars-wmts/catalog/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0//default/default028mm/{z}/{x}/{y}.jpg',
-        tilingScheme: new Cesium.WebMercatorTilingScheme({ ellipsoid: marsEllipsoid }),
-        credit: 'NASA/JPL-Caltech/USGS (Mars Trek)'
+        url: './tiles/imagery/{z}/{x}/{y}.png',
+        maximumLevel: 5,
+        tilingScheme: new Cesium.GeographicTilingScheme({ ellipsoid: marsEllipsoid }),
+        credit: 'NASA/MGS/Viking/USGS'
     })),
     baseLayerPicker: false,
     geocoder: false,
@@ -22,34 +23,20 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     timeline: false,
     animation: false,
     navigationHelpButton: false,
-    skyBox: false,
-    msaaSamples: 4
+    skyBox: false
 });
 
-// Configure Mars Environment
 viewer.scene.globe.ellipsoid = marsEllipsoid;
-viewer.scene.globe.baseColor = Cesium.Color.BLACK;
+viewer.scene.globe.baseColor = Cesium.Color.DARKRED;
 viewer.scene.globe.enableLighting = false;
 viewer.scene.backgroundColor = Cesium.Color.BLACK;
 
-// Add High-Res MOLA Shaded Relief Layer
-const molaLayer = viewer.imageryLayers.addImageryProvider(new Cesium.WebMapServiceImageryProvider({
-    url: 'https://webmap.lroc.asu.edu/lunaserv/wms',
-    layers: 'mars_mola_color',
-    parameters: {
-        transparent: 'true',
-        format: 'image/png'
-    },
-    tilingScheme: new Cesium.WebMercatorTilingScheme({ ellipsoid: marsEllipsoid }),
-    credit: 'NASA/MGS/MOLA (ASU Lunaserv)'
-}));
+viewer.camera.setView({
+    destination: Cesium.Cartesian3.fromDegrees(0, 0, 8000000)
+});
 
-// Set visibility for detailed layer (start faded out)
-molaLayer.alpha = 0.5;
-
-// Landmark Data
 let allLandmarks: any[] = [];
-const dataSource = new Cesium.CustomDataSource('mars-landmarks');
+const dataSource = new Cesium.CustomDataSource('landmarks');
 viewer.dataSources.add(dataSource);
 
 async function loadLandmarks() {
@@ -59,7 +46,7 @@ async function loadLandmarks() {
         renderLandmarks(allLandmarks);
         populateSidebar(allLandmarks);
     } catch (e) {
-        console.error('Failed to load landmarks', e);
+        console.error('Failed to load Mars landmarks', e);
     }
 }
 
@@ -68,13 +55,12 @@ function renderLandmarks(landmarks: any[]) {
     landmarks.forEach(lm => {
         if (lm.importance >= 2) {
             dataSource.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat, 0, marsEllipsoid),
+                position: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat),
                 point: {
-                    pixelSize: 8,
-                    color: Cesium.Color.fromCssColorString('#e04f39'),
+                    pixelSize: 6,
+                    color: Cesium.Color.ORANGE,
                     outlineColor: Cesium.Color.WHITE,
-                    outlineWidth: 1,
-                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 10000000)
+                    outlineWidth: 1
                 },
                 label: {
                     text: lm.name,
@@ -84,8 +70,8 @@ function renderLandmarks(landmarks: any[]) {
                     outlineWidth: 2,
                     style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                     verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                    pixelOffset: new Cesium.Cartesian2(0, -12),
-                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 5000000)
+                    pixelOffset: new Cesium.Cartesian2(0, -10),
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 6000000)
                 }
             });
         }
@@ -107,7 +93,7 @@ function populateSidebar(landmarks: any[]) {
             item.innerHTML = `<div class="name">${lm.name}</div><div class="type">${lm.type}</div>`;
             item.onclick = () => {
                 viewer.camera.flyTo({
-                    destination: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat, 800000, marsEllipsoid)
+                    destination: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat, 800000)
                 });
             };
             list.appendChild(item);

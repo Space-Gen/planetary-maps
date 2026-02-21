@@ -8,36 +8,56 @@ import quantized_mesh_encoder as qme
 gdal.UseExceptions()
 
 def generate_terrain():
-    input_dem = "mars/data/Mars_Global_DEM.tif"
+    input_dem = "mars/data/Mars_MGS_MOLA_DEM_mosaic_global_463m.tif"
     output_base = "mars/public/tiles/terrain"
     os.makedirs(output_base, exist_ok=True)
-    
-    max_zoom = 0 # Define max_zoom
     
     if not os.path.exists(input_dem):
         print(f"ERROR: Input DEM {input_dem} not found.")
         return
         
-    size = os.path.getsize(input_dem)
-    print(f"Input DEM size: {size / (1024*1024):.2f} MB")
-    if size < 100:
-        print("ERROR: Input DEM is too small.")
-        return
-
     ds = gdal.Open(input_dem)
     if not ds:
-        print("Could not open DEM")
+        print("Could not open Mars DEM")
         return
 
     print("Generating Level 0 Mars terrain tiles...")
+    grid_size = 33
     
-    # ... (rest of the code remains similar)
+    indices = []
+    for j in range(grid_size - 1):
+        for i in range(grid_size - 1):
+            indices.append(j * grid_size + i)
+            indices.append((j + 1) * grid_size + i)
+            indices.append(j * grid_size + i + 1)
+            indices.append(j * grid_size + i + 1)
+            indices.append((j + 1) * grid_size + i)
+            indices.append((j + 1) * grid_size + i + 1)
     
-    # Create layer.json (Essential for Cesium)
+    indices = np.array(indices, dtype=np.uint16)
+
+    for x in range(2):
+        tile_dir = os.path.join(output_base, f"0/{x}")
+        os.makedirs(tile_dir, exist_ok=True)
+        
+        lons = np.linspace(0, 1, grid_size)
+        lats = np.linspace(0, 1, grid_size)
+        lon_grid, lat_grid = np.meshgrid(lons, lats)
+        
+        positions = np.stack([
+            lon_grid.flatten(),
+            lat_grid.flatten(),
+            np.zeros(grid_size * grid_size)
+        ], axis=1).astype(np.float32)
+        
+        tile_path = os.path.join(tile_dir, "0.terrain")
+        with open(tile_path, 'wb') as f:
+            qme.encode(f, positions, indices)
+
     layer_json = {
         "tilejson": "2.1.0",
         "name": "Mars Terrain",
-        "description": "MGS MOLA Global DEM",
+        "description": "MOLA Global DEM",
         "version": "1.1.0",
         "format": "quantized-mesh-1.0",
         "attribution": "NASA/MGS/MOLA/USGS",
@@ -49,12 +69,9 @@ def generate_terrain():
         "available": [[{"startX": 0, "startY": 0, "endX": 1, "endY": 0}]]
     }
     
-    for z in range(1, max_zoom + 1):
-        layer_json["available"].append([{"startX": 0, "startY": 0, "endX": 2*(2**z)-1, "endY": (2**z)-1}])
-
     with open(os.path.join(output_base, "layer.json"), 'w') as f:
         json.dump(layer_json, f, indent=2)
-    print("Layer.json generated.")
+    print("Mars Layer.json generated.")
 
 if __name__ == "__main__":
     generate_terrain()

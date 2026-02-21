@@ -23,11 +23,9 @@ def process_landmarks():
         print(f"Error reading KMZ: {e}")
         return
 
-    # KML namespaces
     ns = {'kml': 'http://www.opengis.net/kml/2.2'}
-    
     features = []
-    # Find all Placemarks
+    
     for placemark in root.findall('.//kml:Placemark', ns):
         name = placemark.find('kml:name', ns)
         name = name.text if name is not None else "Unknown"
@@ -40,37 +38,33 @@ def process_landmarks():
         else:
             continue
 
-        # Extract extra info from description if available
         desc = placemark.find('kml:description', ns)
-        feat_type = "Unknown"
-        diameter = 0
-        if desc is not None and desc.text:
-            desc_text = desc.text
-            if "Crater" in desc_text: feat_type = "Crater"
-            elif "Vallis" in desc_text: feat_type = "Vallis"
-            elif "Mons" in desc_text: feat_type = "Mons"
-            elif "Planitia" in desc_text: feat_type = "Planitia"
-
-        # Assign importance based on name/type
+        desc_text = desc.text if desc is not None and desc.text else ""
+        
         importance = 1
-        if feat_type in ["Mons", "Vallis"]: importance = 4
-        elif feat_type == "Planitia": importance = 3
-        elif any(major in name for major in ["Olympus", "Marineris", "Gale", "Jezero", "Gusev", "Hellas", "Argyre"]):
+        feat_type = "Unknown"
+        if "Mons" in desc_text or "Mons" in name: 
+            feat_type = "Mountain"
             importance = 4
-            
+        elif "Crater" in desc_text:
+            feat_type = "Crater"
+            importance = 2
+        elif "Planitia" in desc_text:
+            feat_type = "Plain"
+            importance = 3
+
         features.append({
             "name": name,
             "type": feat_type,
             "lat": lat,
             "lon": lon,
-            "diameter_km": diameter,
             "importance": importance
         })
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w') as f:
         json.dump(features, f, indent=2)
-    print(f"Saved {len(features)} landmarks to {output_path}")
+    print(f"Saved {len(features)} Mars landmarks to {output_path}")
 
 if __name__ == "__main__":
     process_landmarks()

@@ -21,13 +21,13 @@ def generate_imagery():
     env["PROJ_IGNORE_CELESTIAL_BODY"] = "YES"
     
     # Using gdal2tiles via subprocess for reliability and performance
-    # --profile=mercator is standard for web maps like MapLibre
+    # --profile=geodetic is required for Cesium's standard planetary view
     try:
         subprocess.run([
             "gdal2tiles.py",
             "--zoom=0-5",
             "--processes=4",
-            "--profile=mercator",
+            "--profile=geodetic", 
             "--webviewer=none",
             input_wac,
             output_dir

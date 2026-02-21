@@ -1,24 +1,32 @@
-name: Moon Map Pipeline
+name: Planetary Hub Pipeline
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *' 
   push:
     branches: [ main ]
     paths:
       - 'moon/**'
-      - '.github/workflows/moon-pipeline.yml'
+      - 'mars/**'
+      - '.github/workflows/**'
+      - 'index.html'
   workflow_dispatch:
+
+env:
+  PROJ_IGNORE_CELESTIAL_BODY: YES
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 jobs:
-  landmarks:
+  # MOON JOBS
+  moon-data:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download & Process Landmarks
+      - name: Process Moon Landmarks
         run: |
           mkdir -p moon/data moon/public/data
           curl -fL --retry 3 -o moon/data/moon_features.kmz https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MOON_nomenclature_center_pts.kmz
@@ -28,6 +36,89 @@ jobs:
           name: moon-data
           path: moon/public/data/
 
+  moon-imagery:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GDAL
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal
+      - name: Tile Moon Imagery
+        run: |
+          mkdir -p moon/data moon/public/tiles/imagery
+          curl -fL --retry 3 -o moon/data/Lunar_LRO_WAC_Mosaic_Global_100m.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif
+          /usr/bin/python3 moon/scripts/generate_imagery.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moon-imagery-tiles
+          path: moon/public/tiles/imagery/
+
+  moon-terrain:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GDAL & QME
+        run: |
+          sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal python3-numpy
+          pip install quantized-mesh-encoder --break-system-packages || pip install quantized-mesh-encoder
+      - name: Generate Moon Terrain
+        run: |
+          mkdir -p moon/data moon/public/tiles/terrain
+          curl -fL --retry 3 -o moon/data/Lunar_LRO_LOLA_Global_LDEM_128ppd.tif https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LOLA_Global_LDEM_118m_Mar2014.tif
+          /usr/bin/python3 moon/scripts/generate_terrain.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moon-terrain-tiles
+          path: moon/public/tiles/terrain/
+
+  # MARS JOBS
+  mars-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Process Mars Landmarks
+        run: |
+          mkdir -p mars/data mars/public/data
+          curl -fL --retry 3 -o mars/data/mars_features.kmz https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MARS_nomenclature_center_pts.kmz
+          python3 mars/scripts/process_landmarks.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mars-data
+          path: mars/public/data/
+
+  mars-imagery:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GDAL
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal
+      - name: Tile Mars Imagery
+        run: |
+          mkdir -p mars/data mars/public/tiles/imagery
+          curl -fL --retry 3 -o mars/data/Mars_Viking_MDIM21_ClrMosaic_global_232m.tif https://planetarymaps.usgs.gov/mosaic/Mars_Viking_MDIM21_ClrMosaic_global_232m.tif
+          /usr/bin/python3 mars/scripts/generate_imagery.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mars-imagery-tiles
+          path: mars/public/tiles/imagery/
+
+  mars-terrain:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GDAL & QME
+        run: |
+          sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal python3-numpy
+          pip install quantized-mesh-encoder --break-system-packages || pip install quantized-mesh-encoder
+      - name: Generate Mars Terrain
+        run: |
+          mkdir -p mars/data mars/public/tiles/terrain
+          curl -fL --retry 3 -o mars/data/Mars_MGS_MOLA_DEM_mosaic_global_463m.tif https://planetarymaps.usgs.gov/mosaic/Mars_MGS_MOLA_DEM_mosaic_global_463m.tif
+          /usr/bin/python3 mars/scripts/generate_terrain.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mars-terrain-tiles
+          path: mars/public/tiles/terrain/
+
   app:
     runs-on: ubuntu-latest
     steps:
@@ -36,14 +127,59 @@ jobs:
         run: |
           npm install -g typescript
           tsc moon/src/app.ts --outFile moon/public/app.js --target es6 --lib dom,es6
-      - name: Stage App
+          tsc mars/src/app.ts --outFile mars/public/app.js --target es6 --lib dom,es6
+      - name: Stage Hub
         run: |
-          mkdir -p stage/moon
+          mkdir -p stage/moon stage/mars
           cp index.html stage/
           cp moon/public/index.html stage/moon/
           cp moon/public/app.js stage/moon/
           cp moon/public/ui.css stage/moon/
+          cp mars/public/index.html stage/mars/
+          cp mars/public/app.js stage/mars/
       - uses: actions/upload-artifact@v4
         with:
-          name: moon-app
+          name: hub-portal
           path: stage/
+
+  deploy:
+    needs: [moon-data, moon-imagery, moon-terrain, mars-data, mars-imagery, mars-terrain, app]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Prepare Workspace
+        run: |
+          mkdir -p dist/moon/data dist/moon/tiles/imagery dist/moon/tiles/terrain
+          mkdir -p dist/mars/data dist/mars/tiles/imagery dist/mars/terrain
+      
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Merge Hub Artifacts
+        run: |
+          # Copy Hub Core
+          cp -rv artifacts/hub-portal/* dist/
+          
+          # Merge Moon
+          cp -rv artifacts/moon-data/* dist/moon/data/
+          cp -rv artifacts/moon-imagery-tiles/* dist/moon/tiles/imagery/
+          cp -rv artifacts/moon-terrain-tiles/* dist/moon/tiles/terrain/
+          
+          # Merge Mars
+          cp -rv artifacts/mars-data/* dist/mars/data/
+          cp -rv artifacts/mars-imagery-tiles/* dist/mars/tiles/imagery/
+          cp -rv artifacts/mars-terrain-tiles/* dist/mars/tiles/terrain/
+          
+          ls -R dist/
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

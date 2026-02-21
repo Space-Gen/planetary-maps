@@ -1,17 +1,12 @@
 declare var Cesium: any;
 
-/**
- * Planetary Map Engine - Moon (Cesium Browser-Extensive Version)
- */
-
-// Define Moon Ellipsoid
 const moonEllipsoid = new Cesium.Ellipsoid(1737400, 1737400, 1737400);
 
 const viewer = new Cesium.Viewer('cesiumContainer', {
     baseLayer: new Cesium.ImageryLayer(new Cesium.UrlTemplateImageryProvider({
-        url: 'https://trek.nasa.gov/tiles/Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02/1.0.0/default/default028mm/{z}/{x}/{y}.jpg',
-        tilingScheme: new Cesium.WebMercatorTilingScheme({ ellipsoid: moonEllipsoid }),
-        credit: 'NASA/LROC/WAC (Moon Trek)'
+        url: './tiles/imagery/{z}/{x}/{y}.png',
+        tilingScheme: new Cesium.GeographicTilingScheme({ ellipsoid: moonEllipsoid }),
+        credit: 'NASA/LROC/WAC'
     })),
     baseLayerPicker: false,
     geocoder: false,
@@ -22,33 +17,20 @@ const viewer = new Cesium.Viewer('cesiumContainer', {
     timeline: false,
     animation: false,
     navigationHelpButton: false,
-    skyBox: false,
-    msaaSamples: 4
+    skyBox: false
 });
 
-// Configure Moon Environment
-viewer.scene.globe.ellipsoid = moonEllipsoid;
-viewer.scene.globe.baseColor = Cesium.Color.BLACK;
+// Force Globe Visibility
+viewer.scene.globe.show = true;
+viewer.scene.globe.baseColor = Cesium.Color.RED; // Visible red fallback
 viewer.scene.globe.enableLighting = false;
 viewer.scene.backgroundColor = Cesium.Color.BLACK;
 
-// Add High-Res NAC WMS Layer (Dynamic)
-const nacLayer = viewer.imageryLayers.addImageryProvider(new Cesium.WebMapServiceImageryProvider({
-    url: 'https://webmap.lroc.asu.edu/lunaserv/wms',
-    layers: 'luna_nac_overlay',
-    parameters: {
-        transparent: 'true',
-        format: 'image/png'
-    },
-    tilingScheme: new Cesium.WebMercatorTilingScheme({ ellipsoid: moonEllipsoid }),
-    credit: 'NASA/LROC/NAC (ASU Lunaserv)'
-}));
+// Focus camera
+viewer.camera.setView({
+    destination: Cesium.Cartesian3.fromDegrees(0, 0, 4000000, moonEllipsoid)
+});
 
-// Set visibility threshold for NAC layer
-nacLayer.show = true;
-nacLayer.alpha = 1.0;
-
-// Landmark Data
 let allLandmarks: any[] = [];
 const dataSource = new Cesium.CustomDataSource('landmarks');
 viewer.dataSources.add(dataSource);
@@ -71,11 +53,10 @@ function renderLandmarks(landmarks: any[]) {
             dataSource.entities.add({
                 position: Cesium.Cartesian3.fromDegrees(lm.lon, lm.lat, 0, moonEllipsoid),
                 point: {
-                    pixelSize: 8,
-                    color: Cesium.Color.fromCssColorString('#30bced'),
+                    pixelSize: 6,
+                    color: Cesium.Color.CYAN,
                     outlineColor: Cesium.Color.WHITE,
-                    outlineWidth: 1,
-                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 10000000)
+                    outlineWidth: 1
                 },
                 label: {
                     text: lm.name,
@@ -85,8 +66,8 @@ function renderLandmarks(landmarks: any[]) {
                     outlineWidth: 2,
                     style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                     verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                    pixelOffset: new Cesium.Cartesian2(0, -12),
-                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 2000000)
+                    pixelOffset: new Cesium.Cartesian2(0, -10),
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 5000000)
                 }
             });
         }
